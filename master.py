@@ -14,6 +14,7 @@ class Master:
     def __init__(self, config, sch_algo='RR'):
         self.request_queue = SimpleQueue()
         self.workers = config["workers"]
+        #print(self.workers)
         self.available_slots = {}
         
         if sch_algo == 'RR':
@@ -22,9 +23,10 @@ class Master:
             self.sch_algo = self.random
         elif sch_algo == 'LL':
             self.sch_algo = self.least_loaded
-        
+
         for worker in self.workers:
             self.available_slots[worker["worker_id"]] = worker["slots"]
+
         #have to define shared variable(can be queue of requests) - techinically master doesn't care about slots, 
         #only the scheduler does - can keep scheduler independent
 
@@ -42,13 +44,12 @@ class Master:
 
     def round_robin(self):
         free_slot_found = False
-        #they said it will be sortedd, idk if they meant that we assume it is sorted or we have to sort
+        #they said it will be sorted, idk if they meant that we assume it is sorted or we have to sort
         #so I just sorted it 
         worker_ids = []
         for w in self.workers:
             worker_ids.append(w["worker_id"]) 
         worker_ids.sort()
-        print(worker_ids)
         for worker in worker_ids:
             if self.available_slots[worker] > 0:
                 free_slot_found = True
