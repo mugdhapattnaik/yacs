@@ -98,7 +98,7 @@ class Master:
             self.request_queue.put(t)            
             return True
 
-    def schedule(self):
+    def schedule(self,request):
         map_tasks = request["map_tasks"]
         for mapper in map_tasks:
             w = self.sch_algo() #returns a worker that is free for task
@@ -151,7 +151,7 @@ if __name__ == '__main__':
         request = json.loads(r)
         if master.parse(request):
             master.schedule(request) #currently schedule is being called on a per job basis, we need it to be called only once, after we receive all job requests
-        conn.close()
+        req_conn.close()
 
         
         
