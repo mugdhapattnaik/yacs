@@ -125,6 +125,12 @@ class Master:
     '''
     def scheduler(self):	 
         #Needs to be finished
+        while True:
+            for tasks in taskQueue:
+                w = self.sch_algo() #returns a worker_id that is free for task
+                task = taskQueue[0]
+                taskQueue.remove(task)
+                self.send_task(task, w)
         
          
     def get_req(self, request):	 
@@ -133,12 +139,15 @@ class Master:
         mapTaskcounts[request["job_id"]] = {}
         mapTaskcounts[request["job_id"]] = len(request["map_tasks"])
         reduceTasks[request["job_id"]] = []
+        #taskQueue[request["job_id"]] = []
         #store reducer tasks in reduceTasks so that it can be queued once mapper tasks have finished running
         for reducer in reduce_tasks:
             reduceTasks[request["job_id"]].append(reducer)  
-        #store mapper tasks in taskQueue      
+        #store mapper tasks in taskQueue     
+        task={}
         for mapper in map_tasks:
-            taskQueue[request["job_id"]].append(mapper)  
+            mapper["job_id"] = request["job_id"]
+            taskQueue.append(mapper)  
                 
     def send_task(self, task, worker_id):
         host = 'localhost' #TBD
@@ -151,10 +160,13 @@ class Master:
             c.connect((host, port))
             message = json.dumps(task).encode()
             c.send(message)
+        available.acquire()
+        self.available_slots[w["worker_id"]] -=1
+        available.release()
 
 available=threading.Lock()
 mapTaskcounts = {}
-taskQueue = {} 
+taskQueue = []
 reduceTasks = {}
 if __name__ == '__main__':     
 
@@ -171,7 +183,7 @@ if __name__ == '__main__':
     scheduling_algo = str(sys.argv[2])
     
     master = Master(config, scheduling_algo)
-    scheduler_thread = threading.Thread(target = self.scheduler).start()
+    scheduler_thread = threading.Thread(target = master.scheduler).start()
     while True:
         req_conn, addr = requests_socket.accept()
         r = req_conn.recv(2048).decode()
