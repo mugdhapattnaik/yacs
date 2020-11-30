@@ -3,16 +3,19 @@
     {
       "worker_id": 1,
       "slots": 5,
+      "host": "localhost",
       "port": 4000
     },
     {
       "worker_id": 2,
       "slots": 7,
+      "host": "localhost",
       "port": 4001
     },
     {
       "worker_id": 3,
       "slots": 3,
+      "host": "localhost",
       "port": 4002
     }
   ]
