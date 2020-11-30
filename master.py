@@ -47,8 +47,10 @@ class Master:
             conn, addr = worker_updates_socket.accept()
             m = conn.recv(2048).decode()
             message = json.loads(m)
-            self.available_slots[message["worker_id"]] +=1
-            #print(self.available_slots)
+            available.acquire()
+            #self.available_slots[message["worker_id"]] +=1
+            available.release()
+            #print("-",self.available_slots)
             #decide the format of message sent by workers 
             #update active slots
             conn.close()
@@ -104,16 +106,21 @@ class Master:
         map_tasks = request["map_tasks"]
         for mapper in map_tasks:
             w = self.sch_algo() #returns a worker that is free for task
+            available.acquire()
             self.available_slots[w] -= 1
-            print(self.available_slots)
+            #print(self.available_slots)
+            #print(map_tasks)
+            available.release()
             self.send_task(mapper, w)
         
         reduce_tasks = request["reduce_tasks"]
         for reducer in reduce_tasks:
             w = self.sch_algo() #returns a worker_id that is free for task
+            available.acquire()
             self.available_slots[w] -= 1
             t = (reducer["task_id"], w)
             self.request_queue.put(t)
+            available.release()
             self.send_task(reducer, w)
 
     def send_task(self, task, worker_id):
@@ -128,7 +135,7 @@ class Master:
             message = json.dumps(task).encode()
             c.send(message)
 
-
+available=threading.Lock()
 if __name__ == '__main__':     
 
     requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
