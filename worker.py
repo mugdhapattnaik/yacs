@@ -24,8 +24,14 @@ class Worker:
             self.num_active_slots +=1
         slot_lock.release()
 
-    def send_updates(self):
-        pass
+    def send_updates(self, task):
+        finished_task = {"worker_id": worker_id, "task_id": task["task_id"]}
+        updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        updates_port = 5001
+        updates_socket.connect((host, updates_port))
+        message = json.dumps(finished_task).encode()
+        updates_socket.send(message)
+        updates_socket.close()
 
     def run_task(self):
         while True:
@@ -34,6 +40,7 @@ class Worker:
                     slot_lock.acquire()
                     self.slots.remove(task)
                     self.num_active_slots -=1
+                    self.send_updates(task)
                     slot_lock.release()
                     break
                 else:

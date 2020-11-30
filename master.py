@@ -47,6 +47,8 @@ class Master:
             conn, addr = worker_updates_socket.accept()
             m = conn.recv(2048).decode()
             message = json.loads(m)
+            self.available_slots[message["worker_id"]] +=1
+            #print(self.available_slots)
             #decide the format of message sent by workers 
             #update active slots
             conn.close()
@@ -103,7 +105,7 @@ class Master:
         for mapper in map_tasks:
             w = self.sch_algo() #returns a worker that is free for task
             self.available_slots[w] -= 1
-
+            print(self.available_slots)
             self.send_task(mapper, w)
         
         reduce_tasks = request["reduce_tasks"]
