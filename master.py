@@ -38,11 +38,17 @@ class Master:
     
     def listen(self):
         #print(worker_updates_port)
+        worker_updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        worker_updates_port = 5001
+        
+        worker_updates_socket.bind((host, worker_updates_port))
+        worker_updates_socket.listen(3)
         while True:
             conn, addr = worker_updates_socket.accept()
             m = conn.recv(2048).decode()
             message = json.loads(m)
             #decide the format of message sent by workers 
+            #update active slots
             conn.close()
     
     def random(self):
@@ -88,15 +94,16 @@ class Master:
         if len(request["map_tasks"]) == 0:
             return False
         else:
+            t = (request)
+            self.request_queue.put(t)            
             return True
 
-    def schedule(self, request):
+    def schedule(self):
         map_tasks = request["map_tasks"]
         for mapper in map_tasks:
             w = self.sch_algo() #returns a worker that is free for task
             self.available_slots[w] -= 1
-            t = (mapper["task_id"], w)
-            self.request_queue.put(t)
+
             self.send_task(mapper, w)
         
         reduce_tasks = request["reduce_tasks"]
@@ -123,28 +130,40 @@ class Master:
 if __name__ == '__main__':     
 
     requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    worker_updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
     host = 'localhost'
     requests_port = 5000
-    worker_updates_port = 5001
+    
 
     requests_socket.bind((host, requests_port))
     requests_socket.listen(3)
-
-    #workers send updates to this port
-    worker_updates_socket.bind((host, worker_updates_port))
-    worker_updates_socket.listen(3)
 
     
     config_file = open(sys.argv[1], 'r')
     config = json.load(config_file)
     scheduling_algo = str(sys.argv[2])
+    
     master = Master(config, scheduling_algo)
 
     while True:
-        conn, addr = requests_socket.accept()
-        r = conn.recv(2048).decode()
+        req_conn, addr = requests_socket.accept()
+        r = req_conn.recv(2048).decode()
         request = json.loads(r)
         if master.parse(request):
-            master.schedule(request)
+            master.schedule(request) #currently schedule is being called on a per job basis, we need it to be called only once, after we receive all job requests
         conn.close()
+
+        
+        
+'''
+to listen:
+
+#workers send updates to this port
+worker_updates_socket.bind((host, worker_updates_port))
+worker_updates_socket.listen(3)
+while True:
+    up_conn, addr = worker_updates_socket.accept()
+    update_message = up_conn.recv.decode()
+    #change number of active slots based on update message
+        
+'''

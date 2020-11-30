@@ -36,6 +36,8 @@ class Worker:
                     self.num_active_slots -=1
                     slot_lock.release()
                     break
+                else:
+                    time.sleep(1)
 
 slot_lock=threading.Lock()
 if __name__ == '__main__':
@@ -46,18 +48,23 @@ if __name__ == '__main__':
     #have to get slots number from config file somehow - not sure if worker.py has access to config.json file(prolly doesn't)
     #get slot values from master
         
-    task_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    task_socket.bind((host, port))    
-    task_socket.listen(5)
-    conn, addr = task_socket.accept()
-    c = conn.recv(2048).decode()
+    worker_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    worker_socket.bind(('localhost', port))
+    worker_socket.listen(1)
+    config_socket, addr = worker_socket.accept()
+
+    c = config_socket.recv(2048).decode()
     config = json.loads(c)
-    conn.close()
     worker = Worker(config)
     monitor_thread=threading.Thread(target=worker.run_task).start()
     while True:
-        conn, addr = task_socket.accept()
-        t = conn.recv(2048).decode()
+        task_socket, addr = worker_socket.accept()
+        t = task_socket.recv(2048).decode()
         task = json.loads(t)
         worker.schedule(task)
-    conn.close()
+        task_socket.close()
+'''
+[3,1,2,4]
+[2,0,1,3] =>[2,1,3]
+
+'''
