@@ -29,6 +29,7 @@ class Worker:
 if __name__ == '__main__':
     host = 'localhost'
     port = int(sys.argv[1])
+    print("port=",port)
     worker_id = int(sys.argv[2])
     
     #have to get slots number from config file somehow - not sure if worker.py has access to config.json file(prolly doesn't)
@@ -40,6 +41,8 @@ if __name__ == '__main__':
     worker = Worker()
     while True:
         conn, addr = task_socket.accept()
-        task = conn.recv(2048).decode()
+        t = conn.recv(2048).decode()
+        task = json.loads(t)
+        print(task)
         worker.run_task(task)
     conn.close()

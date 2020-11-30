@@ -44,13 +44,15 @@ class Master:
         free_slot_found = False
         #they said it will be sortedd, idk if they meant that we assume it is sorted or we have to sort
         #so I just sorted it 
+        worker_ids = []
         for w in self.workers:
             worker_ids.append(w["worker_id"]) 
         worker_ids.sort()
-        
+        print(worker_ids)
         for worker in worker_ids:
             if self.available_slots[worker] > 0:
                 free_slot_found = True
+                break
         return worker    
 
     def least_loaded(self):
@@ -66,7 +68,7 @@ class Master:
                 break
         return worker
 
-    def parse(request):
+    def parse(self, request):
         if len(request["map_tasks"]) == 0:
             return False
         else:
@@ -89,15 +91,16 @@ class Master:
             self.request_queue.put(t)
             self.send_task(reducer, w)
 
-    def send_task(self, task, worker):
+    def send_task(self, task, worker_id):
         host = 'localhost' #TBD
         port = 1
         for w in self.workers:
-            if w["worker_id"] == w:
+            if w["worker_id"] == worker_id:
                 port = int(w["port"])
+                
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
-            c.connect((host,port))
-            message = json.dumps(tasks).encode()
+            c.connect((host, port))
+            message = json.dumps(task).encode()
             c.send(message)
 
 
@@ -124,7 +127,8 @@ if __name__ == '__main__':
 
     while True:
         conn, addr = requests_socket.accept()
-        request = conn.recv(2048).decode()
+        r = conn.recv(2048).decode()
+        request = json.loads(r)
         if master.parse(request):
             master.schedule(request)
     conn.close()
