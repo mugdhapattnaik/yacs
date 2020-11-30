@@ -5,14 +5,15 @@ import socket
 import time
 import sys
 import random
-
+import threading
 
 
 class Worker:
 
     def __init__(self):
         self.num_active_slots = 0
-        self.slots = 0
+        self.num_slots = 0
+        self.slots = list()
 
     #incoming tasks must be queued and scheduled into slots(fcfs round robin cuz worker is dum)
     def schedule(self):
@@ -40,6 +41,7 @@ if __name__ == '__main__':
     worker = Worker()
     while True:
         conn, addr = task_socket.accept()
-        task = conn.recv(2048).decode()
+        t = conn.recv(2048).decode()
+        task = json.loads(t)
         worker.run_task(task)
     conn.close()

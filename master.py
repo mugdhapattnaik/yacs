@@ -53,6 +53,7 @@ class Master:
         for worker in worker_ids:
             if self.available_slots[worker] > 0:
                 free_slot_found = True
+                break
         return worker    
 
     def least_loaded(self):
@@ -92,11 +93,11 @@ class Master:
             self.request_queue.put(t)
             self.send_task(reducer, w)
 
-    def send_task(self, task, worker):
+    def send_task(self, task, worker_id):
         host = 'localhost' #TBD
         port = 1
         for w in self.workers:
-            if w["worker_id"] == w:
+            if w["worker_id"] == worker_id:
                 port = int(w["port"])
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
             c.connect((host,port))
