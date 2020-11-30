@@ -14,6 +14,7 @@ class Master:
     def __init__(self, config, sch_algo='RR'):
         self.request_queue = SimpleQueue()
         self.workers = config["workers"]
+        #print(self.workers)
         self.available_slots = {}
         
         if sch_algo == 'RR':
@@ -22,9 +23,10 @@ class Master:
             self.sch_algo = self.random
         elif sch_algo == 'LL':
             self.sch_algo = self.least_loaded
-        
+
         for worker in self.workers:
             self.available_slots[worker["worker_id"]] = worker["slots"]
+
         #have to define shared variable(can be queue of requests) - techinically master doesn't care about slots, 
         #only the scheduler does - can keep scheduler independent
 
@@ -42,7 +44,7 @@ class Master:
 
     def round_robin(self):
         free_slot_found = False
-        #they said it will be sortedd, idk if they meant that we assume it is sorted or we have to sort
+        #they said it will be sorted, idk if they meant that we assume it is sorted or we have to sort
         #so I just sorted it 
         for w in self.workers:
             worker_ids.append(w["worker_id"]) 
@@ -66,7 +68,8 @@ class Master:
                 break
         return worker
 
-    def parse(request):
+    def parse(self,request):
+
         if len(request["map_tasks"]) == 0:
             return False
         else:
@@ -97,7 +100,7 @@ class Master:
                 port = int(w["port"])
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
             c.connect((host,port))
-            message = json.dumps(tasks).encode()
+            message = json.dumps(task).encode()
             c.send(message)
 
 
@@ -124,7 +127,9 @@ if __name__ == '__main__':
 
     while True:
         conn, addr = requests_socket.accept()
-        request = conn.recv(2048).decode()
+        r = conn.recv(2048).decode()
+        request = json.loads(r)
+
         if master.parse(request):
             master.schedule(request)
     conn.close()
