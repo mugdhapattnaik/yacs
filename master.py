@@ -101,15 +101,15 @@ class Master:
             t = (request)
             self.request_queue.put(t)            
             return True
-
+    '''
     def schedule(self,request):
         map_tasks = request["map_tasks"]
         for mapper in map_tasks:
             w = self.sch_algo() #returns a worker that is free for task
             available.acquire()
             self.available_slots[w] -= 1
-            #print(self.available_slots)
-            #print(map_tasks)
+            print(self.available_slots)
+            	print(map_tasks)
             available.release()
             self.send_task(mapper, w)
         
@@ -122,7 +122,24 @@ class Master:
             self.request_queue.put(t)
             available.release()
             self.send_task(reducer, w)
-
+    '''
+    def scheduler(self):	 
+        #Needs to be finished
+        
+         
+    def get_req(self, request):	 
+        map_tasks = request["map_tasks"]
+        reduce_tasks = request["reduce_tasks"]
+        mapTaskcounts[request["job_id"]] = {}
+        mapTaskcounts[request["job_id"]] = len(request["map_tasks"])
+        reduceTasks[request["job_id"]] = []
+        #store reducer tasks in reduceTasks so that it can be queued once mapper tasks have finished running
+        for reducer in reduce_tasks:
+            reduceTasks[request["job_id"]].append(reducer)  
+        #store mapper tasks in taskQueue      
+        for mapper in map_tasks:
+            taskQueue[request["job_id"]].append(mapper)  
+                
     def send_task(self, task, worker_id):
         host = 'localhost' #TBD
         port = 1
@@ -136,14 +153,15 @@ class Master:
             c.send(message)
 
 available=threading.Lock()
+mapTaskcounts = {}
+taskQueue = {} 
+reduceTasks = {}
 if __name__ == '__main__':     
 
     requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
     host = 'localhost'
     requests_port = 5000
-    
-
     requests_socket.bind((host, requests_port))
     requests_socket.listen(3)
 
@@ -153,13 +171,13 @@ if __name__ == '__main__':
     scheduling_algo = str(sys.argv[2])
     
     master = Master(config, scheduling_algo)
-
+    scheduler_thread = threading.Thread(target = self.scheduler).start()
     while True:
         req_conn, addr = requests_socket.accept()
         r = req_conn.recv(2048).decode()
         request = json.loads(r)
         if master.parse(request):
-            master.schedule(request) #currently schedule is being called on a per job basis, we need it to be called only once, after we receive all job requests
+            master.get_req(request) #currently schedule is being called on a per job basis, we need it to be called only once, after we receive all job requests
         req_conn.close()
 
         
