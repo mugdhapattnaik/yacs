@@ -10,9 +10,9 @@ import threading
 
 class Worker:
 
-    def __init__(self):
+    def __init__(self, config):
         self.num_active_slots = 0
-        self.num_slots = 0
+        self.num_slots = config["slots"]
         self.slots = list()
 
     #incoming tasks must be queued and scheduled into slots(fcfs round robin cuz worker is dum)
@@ -44,12 +44,16 @@ if __name__ == '__main__':
     worker_id = int(sys.argv[2])
 
     #have to get slots number from config file somehow - not sure if worker.py has access to config.json file(prolly doesn't)
-
+    #get slot values from master
+        
     task_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     task_socket.bind((host, port))    
     task_socket.listen(5)
-
-    worker = Worker()
+    conn, addr = task_socket.accept()
+    c = conn.recv(2048).decode()
+    config = json.loads(c)
+    conn.close()
+    worker = Worker(config)
     monitor_thread=threading.Thread(target=worker.run_task).start()
     while True:
         conn, addr = task_socket.accept()

@@ -5,7 +5,7 @@ import socket
 import time
 import sys
 import random
-
+import threading
 
 from queue import SimpleQueue
 
@@ -26,10 +26,25 @@ class Master:
 
         for worker in self.workers:
             self.available_slots[worker["worker_id"]] = worker["slots"]
-
+            host = worker["host"]
+            port = worker["port"]
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
+                c.connect((host, port))
+                message = json.dumps(worker).encode()
+                c.send(message)
+        worker_message = threading.Thread(target = self.listen).start()
         #have to define shared variable(can be queue of requests) - techinically master doesn't care about slots, 
         #only the scheduler does - can keep scheduler independent
-
+    
+    def listen(self):
+        #print(worker_updates_port)
+        while True:
+            conn, addr = worker_updates_socket.accept()
+            m = conn.recv(2048).decode()
+            message = json.loads(m)
+            #decide the format of message sent by workers 
+            conn.close()
+    
     def random(self):
         free_slot_found = False
         worker_ids = []
