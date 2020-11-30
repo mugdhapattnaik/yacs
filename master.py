@@ -46,6 +46,7 @@ class Master:
         free_slot_found = False
         #they said it will be sorted, idk if they meant that we assume it is sorted or we have to sort
         #so I just sorted it 
+        worker_ids = []
         for w in self.workers:
             worker_ids.append(w["worker_id"]) 
         worker_ids.sort()
