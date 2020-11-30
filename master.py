@@ -132,4 +132,4 @@ if __name__ == '__main__':
         request = json.loads(r)
         if master.parse(request):
             master.schedule(request)
-    conn.close()
+        conn.close()
