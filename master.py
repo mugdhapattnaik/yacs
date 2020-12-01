@@ -53,7 +53,7 @@ class Master:
             available.release()
             #print("-",self.available_slots)
             #decide the format of message sent by workers 
-            if message["Dependency"] == True:
+            if message["Dependency"] == True:   
                 mapTaskcounts[message["job_id"]] -=1
                 if mapTaskcounts[message["job_id"]] == 0:
                     for reduce_task in reduceTasks[message["job_id"]]:
@@ -84,9 +84,11 @@ class Master:
             worker_ids.append(w["worker_id"]) 
         worker_ids.sort()
         for worker in worker_ids:
+            print(self.available_slots)
             if self.available_slots[worker] > 0:
                 free_slot_found = True
                 break
+
         return worker    
 
     def least_loaded(self):
@@ -136,6 +138,7 @@ class Master:
         while True:
             for tasks in taskQueue:
                 w = self.sch_algo() #returns a worker_id that is free for task
+
                 task = taskQueue[0]
                 taskQueue.remove(task)
                 self.send_task(task, w)
@@ -170,7 +173,10 @@ class Master:
             message = json.dumps(task).encode()
             c.send(message)
         available.acquire()
-        self.available_slots[w["worker_id"]] -=1
+        #print(type(worker_id),worker_id)
+        #print(self.available_slots[worker_id])
+        self.available_slots[worker_id] -=1
+        print("-",self.available_slots)
         available.release()
 
 available=threading.Lock()

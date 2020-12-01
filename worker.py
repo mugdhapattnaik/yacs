@@ -63,7 +63,7 @@ if __name__ == '__main__':
     worker_socket.listen(1)
     config_socket, addr = worker_socket.accept()
 
-    c = config_socket.recv(2048).decode()
+    c = config_socket.recv(3072).decode()
     config = json.loads(c)
     worker = Worker(config)
     monitor_thread=threading.Thread(target=worker.run_task).start()
