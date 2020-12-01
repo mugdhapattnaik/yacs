@@ -48,11 +48,11 @@ class Worker:
 			task_id = task_info["task_id"]
 			task_duration = task_info["duration"]
 			
-			print("rec", task_id)
+			print("Task received at Worker ", self.id, task_id)
 				
 			task = self.Task(job_id, task_id, task_duration, time.time())
 
-			print("in", task.task_id)			
+			#print("in", task.task_id)			
 			
 			lock1.acquire()			
 			self.execution_pool.append(task)
@@ -60,15 +60,10 @@ class Worker:
 			task_conn.close()
 		
 	def execute_tasks(self):
-		
-		#print("threadddd")
 		while True:
 			lock1.acquire()
-		#	print(self.execution_pool)
-			
 			if(len(self.execution_pool) == 0):
 				pass
-				#time.sleep(1)
 			else:
 				for i, task in enumerate(self.execution_pool):
 					now = time.time()
@@ -77,19 +72,18 @@ class Worker:
 						self.execution_pool.pop(i)
 						self.send_update(task)
 						self.w.workerTimer(task.job_id, task.task_id, task.start_time, now, self.id)
-				#time.sleep(1)
 			lock1.release()
 			time.sleep(1)
 
 	def send_update(self, task):
 		finished_task = {"worker_id": self.id, "task_id": task.task_id}
-		print("out",finished_task)
+		print("Completed task: ",finished_task)
 		updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		updates_port = 5001
 		updates_socket.connect(('localhost', updates_port))
 		message = json.dumps(finished_task).encode()
 		updates_socket.send(message)
-		print("sent")
+		print("Update sent to master")
 		updates_socket.close()
 
 if __name__ == '__main__':
