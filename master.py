@@ -44,19 +44,6 @@ class Master:
 
 	def __init__(self, config, sch_algo='RR'):
 		
-		for worker_config in config["workers"]:
-			self.worker_ids.append(worker_config["worker_id"])
-			self.workers[worker_config["worker_id"]] = self.Worker(worker_config)
-
-		if sch_algo == 'RR':
-			worker_ids.sort()
-			self.current_worker_id = worker_ids[0]
-			self.sch_algo = self.round_robin_algo
-		elif sch_algo == 'RANDOM':
-			self.sch_algo = self.random_algo
-		elif sch_algo == 'LL':
-			self.sch_algo = self.least_loaded_algo
-		
 		self.worker_ids = []
 		self.workers = {}
 		self.jobs = {}
@@ -67,6 +54,15 @@ class Master:
 		for worker_config in config["workers"]:
 			self.worker_ids.append(worker_config["worker_id"])
 			self.workers[worker_config["worker_id"]] = self.Worker(worker_config)
+
+		if sch_algo == 'RR':
+			self.worker_ids.sort()
+			self.current_worker_id = self.worker_ids[0]
+			self.sch_algo = self.round_robin_algo
+		elif sch_algo == 'RANDOM':
+			self.sch_algo = self.random_algo
+		elif sch_algo == 'LL':
+			self.sch_algo = self.least_loaded_algo
 		
 		#initializing loggers
 		self.ml = masterLogger()	
@@ -117,7 +113,7 @@ class Master:
 					worker = self.sch_algo()
 					print(worker.id)
 					map_task = job.map_tasks.get()
-					selsf.send_task(map_task, worker)
+					self.send_task(map_task, worker)
 					print("========SENT MAP TASK=========", map_task["task_id"])
 					self.pr_workers()
 					#WITHIN OR OUTSIDE CRITICAL SECTION					
@@ -215,10 +211,10 @@ class Master:
 			next_index = (curr_index + 1) % len(self.worker_ids)
 			current_worker = self.workers[self.current_worker_id]
 			if current_worker.available():
-				worker.active_slots += 1
+				current_worker.active_slots += 1
 				self.current_worker_id = self.worker_ids[next_index]
-				return worker
-			lock2.release()
+				return current_worker
+				lock2.release()
 			else:
 				worker_found = False
 				i = next_index
@@ -245,7 +241,7 @@ class Master:
 					least_loaded = worker
 					max_slots = curr_slots
 			
-			worker = least_loaded			
+			worker = least_loaded
 			if(worker.available()):
 				worker.active_slots += 1
 				return worker
@@ -267,6 +263,7 @@ if __name__ == '__main__':
 	update_dependencies_thread = threading.Thread(target = master.update_dependencies)
 	
 	listen_requests_thread.start()
+	print("Listening for requests...")
 	listen_updates_thread.start()
 	schedule_thread.start()
 	update_dependencies_thread.start()

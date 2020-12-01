@@ -35,7 +35,7 @@ class Worker:
 		worker_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		worker_socket.bind(('', self.port))
 		worker_socket.listen(10)
-		
+		print("Waiting for tasks...")
 		while True:
 		
 			task_conn, addr = worker_socket.accept()
@@ -92,10 +92,11 @@ if __name__ == '__main__':
 	worker_id = int(sys.argv[2])
 
 	worker = Worker(worker_id, port)
-
+    
 	listen_tasks_thread = threading.Thread(target = worker.listen_tasks)
 	execute_tasks_thread = threading.Thread(target = worker.execute_tasks)
 	
+	print("Connected to Master")
 	listen_tasks_thread.start()
 	execute_tasks_thread.start()
 	
