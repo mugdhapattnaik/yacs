@@ -37,7 +37,7 @@ class Master:
         #only the scheduler does - can keep scheduler independent
     
     def listen(self):
-        #print(worker_updates_port)
+
         worker_updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         worker_updates_port = 5001
         
@@ -47,7 +47,7 @@ class Master:
             conn, addr = worker_updates_socket.accept()
             m = conn.recv(2048).decode()
             message = json.loads(m)
-            #print(message)
+
             available.acquire()
             self.available_slots[message["worker_id"]] +=1
             available.release()
@@ -83,11 +83,12 @@ class Master:
         for w in self.workers:
             worker_ids.append(w["worker_id"]) 
         worker_ids.sort()
-        for worker in worker_ids:
-            print(self.available_slots)
-            if self.available_slots[worker] > 0:
-                free_slot_found = True
-                break
+        while not free_slot_found:
+            for worker in worker_ids:
+                if self.available_slots[worker] > 0:
+                    print(self.available_slots[worker], worker)
+                    free_slot_found = True
+                    break
 
         return worker    
 
@@ -138,13 +139,14 @@ class Master:
         while True:
             for tasks in taskQueue:
                 w = self.sch_algo() #returns a worker_id that is free for task
-
+                print(taskQueue)
                 task = taskQueue[0]
                 taskQueue.remove(task)
                 self.send_task(task, w)
         
          
     def get_req(self, request):	 
+        #print("&")
         map_tasks = request["map_tasks"]
         reduce_tasks = request["reduce_tasks"]
         mapTaskcounts[request["job_id"]] = {}
@@ -152,14 +154,14 @@ class Master:
         reduceTasks[request["job_id"]] = []
         #taskQueue[request["job_id"]] = []
         #store reducer tasks in reduceTasks so that it can be queued once mapper tasks have finished running
-        for reducer in reduce_tasks:
-            reduceTasks[request["job_id"]].append(reducer)  
         #store mapper tasks in taskQueue     
         task={}
         for mapper in map_tasks:
             mapper["job_id"] = request["job_id"]
             mapper["Dependency"] = True
             taskQueue.append(mapper)  
+        for reducer in reduce_tasks:
+            reduceTasks[request["job_id"]].append(reducer)  
                 
     def send_task(self, task, worker_id):
         host = 'localhost' #TBD
@@ -173,10 +175,8 @@ class Master:
             message = json.dumps(task).encode()
             c.send(message)
         available.acquire()
-        #print(type(worker_id),worker_id)
-        #print(self.available_slots[worker_id])
         self.available_slots[worker_id] -=1
-        print("-",self.available_slots)
+        #print(self.available_slots)
         available.release()
 
 available=threading.Lock()

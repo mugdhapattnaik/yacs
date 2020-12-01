@@ -26,9 +26,7 @@ class Worker:
         slot_lock.release()
 
     def send_updates(self, task):
-        print(task)
         finished_task = {"worker_id": worker_id, "task_id": task["task_id"], "job_id": task["job_id"], "Dependency":task["Dependency"]}
-        print(finished_task)
         updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         updates_port = 5001
         updates_socket.connect((host, updates_port))
@@ -71,6 +69,7 @@ if __name__ == '__main__':
         task_socket, addr = worker_socket.accept()
         t = task_socket.recv(2048).decode()
         task = json.loads(t)
+        print(task)
         worker.schedule(task)
         task_socket.close()
 '''
