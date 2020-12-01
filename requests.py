@@ -32,6 +32,7 @@ if __name__ == '__main__':
 
 	#get number of requests to be generated
 	number_of_requests=int(sys.argv[1])
+	np.random.seed(0)
 	arrivals = np.random.exponential(1, size=number_of_requests-1)
 	request_number=0
 	#send first request
