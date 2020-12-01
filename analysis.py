@@ -3,16 +3,15 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+#import seaborn as sns #maybe ?
 from statistics import mean, median
 
 master = open("logs/master_log.txt", "r")
 config_file = open("config.json", 'r')
 config = json.load(config_file)
 config_file.close()
-worker_ids = []
-for w in config["workers"]:
-    worker_ids.append(w["worker_id"])   
 
+worker_ids = []
 jobs = {}
 tasks = {}
 job_ids = []
@@ -22,6 +21,11 @@ job_start_times = {}
 task_start_times = {}
 count_m = 0
 count_w = 0
+
+for w in config["workers"]:
+    worker_ids.append(w["worker_id"])   
+
+
 
 for line in master.readlines():
     if count_m != (3 + len(worker_ids)):
@@ -34,11 +38,12 @@ for line in master.readlines():
             job_ids.append(job_id)
             job_start_times[job_id] = job_start
         else:
-            time_intervals.append(float(l[-1]))
+            t = l[-1]
+            time_intervals.append(float(t))
             l.pop(-1)
             for i in l:
                 id, n = i.split(":")
-                num_tasks[id] = n
+                num_tasks[id+"_"+t] = n
 
 for ji in job_ids:
     jobs[ji] = []
@@ -90,9 +95,8 @@ part1_jobs_fig.savefig("graphs/job_completion.png")
 
 
 #Graph showing number of tasks on each machine against time
-part2_fig = plt.figure()
-part2_ax = part2_fig.add_axes([0,0,1,1])
 
+print(num_tasks) # format is key = workerId_time, value = number of tasks at the time
 print("Mean of job completion times = ", job_mean)
 print("Mean of task completion times = ", task_mean)
 print("Median of job completion times = ", job_median)
