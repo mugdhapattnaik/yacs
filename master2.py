@@ -32,6 +32,7 @@ class Master:
 			self.id = request["job_id"]
 			self.map_tasks = Queue()
 			self.reduce_tasks = Queue()
+			self.num_map_tasks = len(request["map_tasks"])
 			
 			for mt in request["map_tasks"]:
 				self.map_tasks.put({"task_id": mt["task_id"], "duration": mt["duration"]})
@@ -42,7 +43,7 @@ class Master:
 				master.tasks[rt["task_id"]] = {"job_id": self.id, "type": "reduce"}
 
 	def __init__(self, config, sch_algo='RR'):
-		self.count = 0
+
 		if sch_algo == 'RR':
 			self.sch_algo = self.round_robin_algo
 		elif sch_algo == 'RANDOM':
@@ -77,72 +78,70 @@ class Master:
 		requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		requests_port = 5000
 		requests_socket.bind(('', requests_port))
-		requests_socket.listen(1)
+		requests_socket.listen(10)
 		
 		while True:
 			req_conn, addr = requests_socket.accept()	
 			r = req_conn.recv(2048).decode()
-			#req_conn.close()
+			
 			request = json.loads(r)
 			
-			lock1.acquire()
 			print("lr")
 			
 			job = self.Job(self, request)
 			self.request_queue.put(job)
 			self.jobs[request["job_id"]] = job
-			lock1.release()
+			
+			req_conn.close()
 			
 	def schedule(self):
 			while True:
+				
 				if(self.request_queue.empty()):
 					continue
 				
-				lock1.acquire()	
 				job = self.request_queue.get()
-				print("sc1")
+#				print("sc1")
 				
-				tmp = list(job.map_tasks.queue)
-				for e in tmp:
-					print(e)
+#				tmp = list(job.map_tasks.queue)
+#				for e in tmp:
+#					print(e)
 				
 				while(not job.map_tasks.empty()):
 								
-					lock2.acquire()
 					print("sc2")
 					worker = self.sch_algo()
 					print(worker.id)
 					map_task = job.map_tasks.get()
 					
-					print(map_task["task_id"])
+#					print(map_task["task_id"])
 					self.send_task(map_task, worker)
 					print("========SENT MAP TASK=========", map_task["task_id"])
 					self.pr_workers()
-					lock2.release()
-				lock1.release()		
-				
+					lock2.release()	
 			
 	def listen_updates(self):
 		worker_updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		worker_updates_port = 5001
 		
 		worker_updates_socket.bind(('localhost', worker_updates_port))
-		worker_updates_socket.listen(5)
+		worker_updates_socket.listen(10)
 		
 		while True:
 			conn, addr = worker_updates_socket.accept()
 			m = conn.recv(8192).decode()
-			#conn.close()
+			
 			message = json.loads(m)
 			print("lu")
 			
 			worker_id = message["worker_id"]
 			task_id = message["task_id"]
-			
+			self.update_queue.put((worker_id, task_id))
+						
 			print("==============COMPLETED TASK==========", task_id, "FROM", worker_id)
 			
-			self.update_queue.put((worker_id, task_id))
-	
+			conn.close()
+			
 	def update_dependencies(self):
 			
 			while True:
@@ -152,39 +151,37 @@ class Master:
 				
 				worker_id, task_id = self.update_queue.get()
 				
-				lock1.acquire()
-				lock2.acquire()
-				
 				print("ud")
+				
 				worker = self.workers[worker_id]
 				job_id = self.tasks[task_id]["job_id"]
 				task_type = self.tasks[task_id]["type"]
-				
-				self.pr_jobs()
-				
-				print(job_id, end = "")
 				job = self.jobs[job_id]
+				
+#				self.pr_jobs()
 					
-				if(job.map_tasks.empty() and job.reduce_tasks.empty()):
-					continue
-					
-				if(task_type == "reduce" or job.map_tasks.empty()):
+#				if(job.map_tasks.empty() and job.reduce_tasks.empty()):
+#					continue
+
+				if(task_type == "map"):
+					job.num_map_tasks -= 1
+									
+				if(job.num_map_tasks == 0 or task_type == "reduce"):
 					if(job.reduce_tasks.empty()):
-						#self.jobs.pop(job_id)
+						lock2.acquire()
 						worker.active_slots -= 1
 						lock2.release()
-						lock1.release()
-						continue
 					else:
 						reduce_task = job.reduce_tasks.get()
-						self.send_task(reduce_task, worker)					
+						lock2.acquire()
+						self.send_task(reduce_task, worker)
+						lock2.release()					
 						print("========SENT REDUCE TASK=======", reduce_task["task_id"])
 				else:
+					lock2.acquire()
 					worker.active_slots -= 1
+					lock2.release()
 					
-				lock2.release()
-				lock1.release()
-
 	def send_task(self, task, worker):
 		host = 'localhost'
 		port = int(worker.port)
@@ -198,27 +195,28 @@ class Master:
 		print("randalgo")
 		while True:
 			worker_id = random.choice(self.worker_ids)
+			lock2.acquire()
 			worker = self.workers[worker_id]
 			if(worker.available()):
 				worker.active_slots += 1
 				return worker
+			lock2.release()
 
 	def round_robin_algo(self):
 		print("robin")
 		while True:
 			worker_ids = sorted(self.worker_ids)
 			for worker_id in worker_ids:
+				lock2.acquire()
 				worker = self.workers[worker_id]
 				if(worker.available()):
 					worker.active_slots += 1
 					return worker
+				lock2.release()
 
 	def least_loaded_algo(self):
-		lock2.release()
-		lock1.release()
 		print("leastloaded")
 		while True:
-			lock1.acquire()
 			lock2.acquire()
 			least_loaded = self.workers[self.worker_ids[0]]
 			max_slots = least_loaded.total_slots - least_loaded.active_slots
@@ -230,12 +228,11 @@ class Master:
 					max_slots = curr_slots
 			
 			worker = least_loaded			
-			if(not worker.available()):
-				lock2.release()
-				lock1.release()
-				continue
-			worker.active_slots += 1
-			return worker
+			if(worker.available()):
+				worker.active_slots += 1
+				return worker
+			
+			lock2.release()
 
 
 if __name__ == '__main__':	 
