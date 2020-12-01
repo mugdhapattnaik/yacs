@@ -21,11 +21,14 @@ class Worker:
         slot_lock.acquire()
         if(self.num_active_slots < self.num_slots):
             self.slots.append(task)
+            #print(self.slots)
             self.num_active_slots +=1
         slot_lock.release()
 
     def send_updates(self, task):
-        finished_task = {"worker_id": worker_id, "task_id": task["task_id"]}
+        print(task)
+        finished_task = {"worker_id": worker_id, "task_id": task["task_id"], "job_id": task["job_id"], "Dependency":task["Dependency"]}
+        print(finished_task)
         updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         updates_port = 5001
         updates_socket.connect((host, updates_port))
@@ -44,7 +47,7 @@ class Worker:
                     slot_lock.release()
                     break
                 else:
-                    time.sleep(1)
+                    time.sleep(0.01)
 
 slot_lock=threading.Lock()
 if __name__ == '__main__':

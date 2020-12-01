@@ -47,11 +47,19 @@ class Master:
             conn, addr = worker_updates_socket.accept()
             m = conn.recv(2048).decode()
             message = json.loads(m)
+            #print(message)
             available.acquire()
-            #self.available_slots[message["worker_id"]] +=1
+            self.available_slots[message["worker_id"]] +=1
             available.release()
             #print("-",self.available_slots)
             #decide the format of message sent by workers 
+            if message["Dependency"] == True:
+                mapTaskcounts[message["job_id"]] -=1
+                if mapTaskcounts[message["job_id"]] == 0:
+                    for reduce_task in reduceTasks[message["job_id"]]:
+                        reduce_task["job_id"] = message["job_id"]
+                        reduce_task["Dependency"] = False
+                        taskQueue.append(reduce_task)
             #update active slots
             conn.close()
     
@@ -147,6 +155,7 @@ class Master:
         task={}
         for mapper in map_tasks:
             mapper["job_id"] = request["job_id"]
+            mapper["Dependency"] = True
             taskQueue.append(mapper)  
                 
     def send_task(self, task, worker_id):
