@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import json
 import socket
@@ -7,217 +7,262 @@ import sys
 import random
 import threading
 
-from queue import SimpleQueue
+from queue import Queue
+from logger import masterLogger
+
+lock1 = threading.Lock()
+lock2 = threading.Lock()
+lock3 = threading.Lock()
 
 class Master:
 
-    def __init__(self, config, sch_algo='RR'):
-        self.request_queue = SimpleQueue()
-        self.workers = config["workers"]
-        #print(self.workers)
-        self.available_slots = {}
-        
-        if sch_algo == 'RR':
-            self.sch_algo = self.round_robin
-        elif sch_algo == 'RANDOM':
-            self.sch_algo = self.random
-        elif sch_algo == 'LL':
-            self.sch_algo = self.least_loaded
+	class Worker:
+		
+		def __init__(self, config):
+			self.id = config["worker_id"]
+			self.total_slots = int(config["slots"])
+			self.active_slots = 0
+			self.port = config["port"]
+		
+		def available(self):
+			return self.active_slots < self.total_slots
+		
+	class Job:
+		
+		def __init__(self, master, request):
+			self.id = request["job_id"]
+			self.map_tasks = Queue()
+			self.reduce_tasks = Queue()
+			self.num_map_tasks = len(request["map_tasks"])
+			
+			for mt in request["map_tasks"]:
+				self.map_tasks.put({"job_id": self.id, "task_id": mt["task_id"], "duration": mt["duration"]})
+				master.tasks[mt["task_id"]] = {"job_id": self.id, "type": "map"}
+			
+			for rt in request["reduce_tasks"]:
+				self.reduce_tasks.put({"job_id": self.id, "task_id": rt["task_id"], "duration": rt["duration"]})
+				master.tasks[rt["task_id"]] = {"job_id": self.id, "type": "reduce"}
 
-        for worker in self.workers:
-            self.available_slots[worker["worker_id"]] = worker["slots"]
-            host = worker["host"]
-            port = worker["port"]
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
-                c.connect((host, port))
-                message = json.dumps(worker).encode()
-                c.send(message)
-        worker_message = threading.Thread(target = self.listen).start()
-        #have to define shared variable(can be queue of requests) - techinically master doesn't care about slots, 
-        #only the scheduler does - can keep scheduler independent
-    
-    def listen(self):
+	def __init__(self, config, sch_algo='RR'):
 
-        worker_updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        worker_updates_port = 5001
-        
-        worker_updates_socket.bind((host, worker_updates_port))
-        worker_updates_socket.listen(3)
-        while True:
-            conn, addr = worker_updates_socket.accept()
-            m = conn.recv(2048).decode()
-            message = json.loads(m)
+		if sch_algo == 'RR':
+			self.sch_algo = self.round_robin_algo
+		elif sch_algo == 'RANDOM':
+			self.sch_algo = self.random_algo
+		elif sch_algo == 'LL':
+			self.sch_algo = self.least_loaded_algo
+		
+		self.worker_ids = []
+		self.workers = {}
+		self.jobs = {}
+		self.tasks = {}
+		self.request_queue = Queue()
+		self.update_queue = Queue()
+		
+		for worker_config in config["workers"]:
+			self.worker_ids.append(worker_config["worker_id"])
+			self.workers[worker_config["worker_id"]] = self.Worker(worker_config)
+		
+		#initializing loggers
+		self.ml = masterLogger()	
+		self.ml.initLog(self.sch_algo, self.worker_ids, self.workers)
+	
+	def pr_workers(self):
 
-            available.acquire()
-            self.available_slots[message["worker_id"]] +=1
-            available.release()
-            #print("-",self.available_slots)
-            #decide the format of message sent by workers 
-            if message["Dependency"] == True:   
-                mapTaskcounts[message["job_id"]] -=1
-                if mapTaskcounts[message["job_id"]] == 0:
-                    for reduce_task in reduceTasks[message["job_id"]]:
-                        reduce_task["job_id"] = message["job_id"]
-                        reduce_task["Dependency"] = False
-                        taskQueue.append(reduce_task)
-            #update active slots
-            conn.close()
-    
-    def random(self):
-        free_slot_found = False
-        worker_ids = []
-        for w in self.workers:
-            worker_ids.append(w["worker_id"]) 
-        while not free_slot_found:
-            worker = worker_ids[random.randrange(0, (len(self.workers)))]
-            if self.available_slots[worker] > 0: 
-                free_slot_found = True
-                break
-        return worker
+		for i in self.worker_ids:
+			worker = self.workers[i]
+			print("Worker: ", worker.id, worker.total_slots, worker.active_slots)
 
-    def round_robin(self):
-        free_slot_found = False
-        #they said it will be sorted, idk if they meant that we assume it is sorted or we have to sort
-        #so I just sorted it 
-        worker_ids = []
-        for w in self.workers:
-            worker_ids.append(w["worker_id"]) 
-        worker_ids.sort()
-        while not free_slot_found:
-            for worker in worker_ids:
-                if self.available_slots[worker] > 0:
-                    print(self.available_slots[worker], worker)
-                    free_slot_found = True
-                    break
+	def pr_jobs(self):
+		
+		for k, v in self.jobs.items():
+			print("Jobs: ", k, ":", v)
 
-        return worker    
 
-    def least_loaded(self):
-        free_slot_found = False
-        while not free_slot_found:
-            max_slots = max(self.available_slots.values())
-            if max_slots == 0:
-                time.sleep(1)
-            else:
-                #to get key from value
-                worker = list(self.available_slots.keys())[self.available_slots.values().index(max_slots)]
-                free_slot_found = True
-                break
-        return worker
+	def listen_requests(self):
+		requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		requests_port = 5000
+		requests_socket.bind(('', requests_port))
+		requests_socket.listen(10)
+		
+		while True:
+			req_conn, addr = requests_socket.accept()	
+			r = req_conn.recv(2048).decode()
+			
+			request = json.loads(r)
+			
+			print("lr")
+			
+			job = self.Job(self, request)
+			self.request_queue.put(job)
+			self.jobs[request["job_id"]] = job
+			
+			req_conn.close()
+			
+	def schedule(self):
+			while True:
+				
+				if(self.request_queue.empty()):
+					continue
+				
+				job = self.request_queue.get()
+				self.ml.logtime(job.id)
+#				print("sc1")
+				
+#				tmp = list(job.map_tasks.queue)
+#				for e in tmp:
+#					print(e)
+				
+				while(not job.map_tasks.empty()):
+								
+					print("sc2")
+					worker = self.sch_algo()
+					print(worker.id)
+					map_task = job.map_tasks.get()
+					
+#					print(map_task["task_id"])
+					self.send_task(map_task, worker)
+					print("========SENT MAP TASK=========", map_task["task_id"])
+					self.pr_workers()
+#WITHIN OR OUTSIDE CRITICAL SECTION					
+					self.ml.prLog(self.worker_ids, self.workers, time.time())
+					lock2.release()	
+			
+	def listen_updates(self):
+		worker_updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		worker_updates_port = 5001
+		
+		worker_updates_socket.bind(('localhost', worker_updates_port))
+		worker_updates_socket.listen(10)
+		
+		while True:
+			conn, addr = worker_updates_socket.accept()
+			m = conn.recv(8192).decode()
+			
+			message = json.loads(m)
+			print("lu")
+			
+			worker_id = message["worker_id"]
+			task_id = message["task_id"]
+			self.update_queue.put((worker_id, task_id))
+						
+			print("==============COMPLETED TASK==========", task_id, "FROM", worker_id)
+			
+			conn.close()
+			
+	def update_dependencies(self):
+			
+			while True:
+				
+				if(self.update_queue.empty()):
+					continue
+				
+				worker_id, task_id = self.update_queue.get()
+				
+				print("ud")
+				
+				worker = self.workers[worker_id]
+				job_id = self.tasks[task_id]["job_id"]
+				task_type = self.tasks[task_id]["type"]
+				job = self.jobs[job_id]
+				
+#				self.pr_jobs()
+					
+#				if(job.map_tasks.empty() and job.reduce_tasks.empty()):
+#					continue
 
-    def parse(self, request):
-        if len(request["map_tasks"]) == 0:
-            return False
-        else:
-            t = (request)
-            self.request_queue.put(t)            
-            return True
-    '''
-    def schedule(self,request):
-        map_tasks = request["map_tasks"]
-        for mapper in map_tasks:
-            w = self.sch_algo() #returns a worker that is free for task
-            available.acquire()
-            self.available_slots[w] -= 1
-            print(self.available_slots)
-            	print(map_tasks)
-            available.release()
-            self.send_task(mapper, w)
-        
-        reduce_tasks = request["reduce_tasks"]
-        for reducer in reduce_tasks:
-            w = self.sch_algo() #returns a worker_id that is free for task
-            available.acquire()
-            self.available_slots[w] -= 1
-            t = (reducer["task_id"], w)
-            self.request_queue.put(t)
-            available.release()
-            self.send_task(reducer, w)
-    '''
-    def scheduler(self):	 
-        #Needs to be finished
-        while True:
-            for tasks in taskQueue:
-                w = self.sch_algo() #returns a worker_id that is free for task
-                print(taskQueue)
-                task = taskQueue[0]
-                taskQueue.remove(task)
-                self.send_task(task, w)
-        
-         
-    def get_req(self, request):	 
-        #print("&")
-        map_tasks = request["map_tasks"]
-        reduce_tasks = request["reduce_tasks"]
-        mapTaskcounts[request["job_id"]] = {}
-        mapTaskcounts[request["job_id"]] = len(request["map_tasks"])
-        reduceTasks[request["job_id"]] = []
-        #taskQueue[request["job_id"]] = []
-        #store reducer tasks in reduceTasks so that it can be queued once mapper tasks have finished running
-        #store mapper tasks in taskQueue     
-        task={}
-        for mapper in map_tasks:
-            mapper["job_id"] = request["job_id"]
-            mapper["Dependency"] = True
-            taskQueue.append(mapper)  
-        for reducer in reduce_tasks:
-            reduceTasks[request["job_id"]].append(reducer)  
-                
-    def send_task(self, task, worker_id):
-        host = 'localhost' #TBD
-        port = 1
-        for w in self.workers:
-            if w["worker_id"] == worker_id:
-                port = int(w["port"])
-                
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
-            c.connect((host, port))
-            message = json.dumps(task).encode()
-            c.send(message)
-        available.acquire()
-        self.available_slots[worker_id] -=1
-        #print(self.available_slots)
-        available.release()
+				if(task_type == "map"):
+					job.num_map_tasks -= 1
+									
+				if(job.num_map_tasks == 0 or task_type == "reduce"):
+					if(job.reduce_tasks.empty()):
+						lock2.acquire()
+						worker.active_slots -= 1
+						lock2.release()
+					else:
+						reduce_task = job.reduce_tasks.get()
+						lock2.acquire()
+						self.send_task(reduce_task, worker)
+						lock2.release()					
+						print("========SENT REDUCE TASK=======", reduce_task["task_id"])
+				else:
+					lock2.acquire()
+					worker.active_slots -= 1
+					lock2.release()
+					
+	def send_task(self, task, worker):
+		host = 'localhost'
+		port = int(worker.port)
 
-available=threading.Lock()
-mapTaskcounts = {}
-taskQueue = []
-reduceTasks = {}
-if __name__ == '__main__':     
+		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
+			c.connect((host, port))
+			message = json.dumps(task).encode()
+			c.send(message)
+	
+	def random_algo(self):
+		print("randalgo")
+		while True:
+			worker_id = random.choice(self.worker_ids)
+			lock2.acquire()
+			worker = self.workers[worker_id]
+			if(worker.available()):
+				worker.active_slots += 1
+				return worker
+			lock2.release()
 
-    requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
-    host = 'localhost'
-    requests_port = 5000
-    requests_socket.bind((host, requests_port))
-    requests_socket.listen(3)
+	def round_robin_algo(self):
+		print("robin")
+		while True:
+			worker_ids = sorted(self.worker_ids)
+			for worker_id in worker_ids:
+				lock2.acquire()
+				worker = self.workers[worker_id]
+				if(worker.available()):
+					worker.active_slots += 1
+					return worker
+				lock2.release()
 
-    
-    config_file = open(sys.argv[1], 'r')
-    config = json.load(config_file)
-    scheduling_algo = str(sys.argv[2])
-    
-    master = Master(config, scheduling_algo)
-    scheduler_thread = threading.Thread(target = master.scheduler).start()
-    while True:
-        req_conn, addr = requests_socket.accept()
-        r = req_conn.recv(2048).decode()
-        request = json.loads(r)
-        if master.parse(request):
-            master.get_req(request) #currently schedule is being called on a per job basis, we need it to be called only once, after we receive all job requests
-        req_conn.close()
+	def least_loaded_algo(self):
+		print("leastloaded")
+		while True:
+			lock2.acquire()
+			least_loaded = self.workers[self.worker_ids[0]]
+			max_slots = least_loaded.total_slots - least_loaded.active_slots
+			for worker_id in self.worker_ids[1::]:
+				worker = self.workers[worker_id]
+				curr_slots = worker.total_slots - worker.active_slots
+				if(curr_slots > max_slots):
+					least_loaded = worker
+					max_slots = curr_slots
+			
+			worker = least_loaded			
+			if(worker.available()):
+				worker.active_slots += 1
+				return worker
+			
+			lock2.release()
 
-        
-        
-'''
-to listen:
 
-#workers send updates to this port
-worker_updates_socket.bind((host, worker_updates_port))
-worker_updates_socket.listen(3)
-while True:
-    up_conn, addr = worker_updates_socket.accept()
-    update_message = up_conn.recv.decode()
-    #change number of active slots based on update message
-        
-'''
+if __name__ == '__main__':	 
+
+	config_file = open(sys.argv[1], 'r')
+	config = json.load(config_file)
+	scheduling_algo = str(sys.argv[2])
+	
+	master = Master(config, scheduling_algo)
+	
+	listen_requests_thread = threading.Thread(target = master.listen_requests)
+	listen_updates_thread = threading.Thread(target = master.listen_updates)
+	schedule_thread = threading.Thread(target = master.schedule)
+	update_dependencies_thread = threading.Thread(target = master.update_dependencies)
+	
+	listen_requests_thread.start()
+	listen_updates_thread.start()
+	schedule_thread.start()
+	update_dependencies_thread.start()
+	
+	
+	listen_requests_thread.join()
+	listen_updates_thread.join()
+	schedule_thread.join()
+	update_dependencies_thread.join()

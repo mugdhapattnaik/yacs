@@ -9,7 +9,7 @@ import datetime
 
 #logging in master.py
 class masterLogger():
-	fname = 'master_log.txt'
+	fname = 'logs/master_log.txt'
 	
 	def __init__(self):
 		self.logmsg = ''
@@ -47,19 +47,18 @@ class workerLogger():
 	
 	def __init__(self, worker_id):
 		self.logmsg = ''
-		self.fname = f'w{worker_id}_log.txt'
+		self.fname = f'logs/w{worker_id}_log.txt'
 		self.worker_id = str(worker_id)
 		
 	def initLog(self):
 		self.logmsg = '$$$ \tdate: ' + str(datetime.datetime.now()) + "\t$$$\n\n"
-		self.logmsg += 'job_id\ttask_id\tstart_time\t\tend_time\t\tworker_id\n'
+		self.logmsg += 'job_id\ttask_id\tstart_time\t\tend_time\tworker_id\n'
 		with open(self.fname, 'w') as f:
 			f.write(self.logmsg)
 		self.logmsg = ''
 
 	def workerTimer(self, job_id, task_id, st_time, ed_time, worker_id):
-		#fname = 'w' + str(worker_id) + '_log.txt'
-		logmsg = str(job_id) + "\t" + str(task_id) + "\t\t" + str(st_time) + "\t" + str(ed_time) + "\t" + self.worker_id + "\n"
+		logmsg = str(job_id) + "\t" + str(task_id) + "\t" + str(st_time) + "\t" + str(ed_time) + "\t" + self.worker_id + "\n"
 		with open(self.fname, 'a') as f:
 		    f.write(logmsg)
 	    

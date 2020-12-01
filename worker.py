@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import json
 import socket
@@ -7,73 +7,103 @@ import sys
 import random
 import threading
 
+from logger import workerLogger
+
+lock1 = threading.Lock()
 
 class Worker:
 
-    def __init__(self, config):
-        self.num_active_slots = 0
-        self.num_slots = config["slots"]
-        self.slots = list()
+	class Task:
+		
+		def __init__(self, job_id, task_id, duration, start_time):
+			self.job_id = job_id
+			self.task_id = task_id
+			self.duration = duration
+			self.start_time = start_time
+			self.elapsed_time = 0
+			
+	def __init__(self, worker_id, port):
+		self.id = worker_id
+		self.port = port
+		self.execution_pool = []
+		#initialize loggers
+		self.w = workerLogger(worker_id)
+		self.w.initLog()
+	
+	def listen_tasks(self):
+		
+		worker_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		worker_socket.bind(('', self.port))
+		worker_socket.listen(10)
+		
+		while True:
+		
+			task_conn, addr = worker_socket.accept()
 
-    #incoming tasks must be queued and scheduled into slots(fcfs round robin cuz worker is dum)
-    def schedule(self,task):
-        task["start_time"] = time.time()
-        slot_lock.acquire()
-        if(self.num_active_slots < self.num_slots):
-            self.slots.append(task)
-            #print(self.slots)
-            self.num_active_slots +=1
-        slot_lock.release()
+			t = task_conn.recv(8192).decode()
+			
+			
+			task_info = json.loads(t)
+			job_id = task_info["job_id"]
+			task_id = task_info["task_id"]
+			task_duration = task_info["duration"]
+			
+			print("rec", task_id)
+				
+			task = self.Task(job_id, task_id, task_duration, time.time())
 
-    def send_updates(self, task):
-        finished_task = {"worker_id": worker_id, "task_id": task["task_id"], "job_id": task["job_id"], "Dependency":task["Dependency"]}
-        updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        updates_port = 5001
-        updates_socket.connect((host, updates_port))
-        message = json.dumps(finished_task).encode()
-        updates_socket.send(message)
-        updates_socket.close()
+			print("in", task.task_id)			
+			
+			lock1.acquire()			
+			self.execution_pool.append(task)
+			lock1.release()
+			task_conn.close()
+		
+	def execute_tasks(self):
+		
+		#print("threadddd")
+		while True:
+			lock1.acquire()
+		#	print(self.execution_pool)
+			
+			if(len(self.execution_pool) == 0):
+				pass
+				#time.sleep(1)
+			else:
+				for i, task in enumerate(self.execution_pool):
+					now = time.time()
+					task.elapsed_time += now - task.start_time
+					if(task.elapsed_time >= task.duration):
+						self.execution_pool.pop(i)
+						self.send_update(task)
+						self.w.workerTimer(task.job_id, task.task_id, task.start_time, now, self.id)
+				#time.sleep(1)
+			lock1.release()
+			time.sleep(1)
 
-    def run_task(self):
-        while True:
-            for task in self.slots:
-                if(time.time() - task["start_time"] >= task["duration"]):
-                    slot_lock.acquire()
-                    self.slots.remove(task)
-                    self.num_active_slots -=1
-                    self.send_updates(task)
-                    slot_lock.release()
-                    break
-                else:
-                    time.sleep(0.01)
+	def send_update(self, task):
+		finished_task = {"worker_id": self.id, "task_id": task.task_id}
+		print("out",finished_task)
+		updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		updates_port = 5001
+		updates_socket.connect(('localhost', updates_port))
+		message = json.dumps(finished_task).encode()
+		updates_socket.send(message)
+		print("sent")
+		updates_socket.close()
 
-slot_lock=threading.Lock()
 if __name__ == '__main__':
-    host = 'localhost'
-    port = int(sys.argv[1])
-    worker_id = int(sys.argv[2])
+	host = 'localhost'
+	port = int(sys.argv[1])
+	worker_id = int(sys.argv[2])
 
-    #have to get slots number from config file somehow - not sure if worker.py has access to config.json file(prolly doesn't)
-    #get slot values from master
-        
-    worker_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    worker_socket.bind(('localhost', port))
-    worker_socket.listen(1)
-    config_socket, addr = worker_socket.accept()
+	worker = Worker(worker_id, port)
 
-    c = config_socket.recv(3072).decode()
-    config = json.loads(c)
-    worker = Worker(config)
-    monitor_thread=threading.Thread(target=worker.run_task).start()
-    while True:
-        task_socket, addr = worker_socket.accept()
-        t = task_socket.recv(2048).decode()
-        task = json.loads(t)
-        print(task)
-        worker.schedule(task)
-        task_socket.close()
-'''
-[3,1,2,4]
-[2,0,1,3] =>[2,1,3]
-
-'''
+	listen_tasks_thread = threading.Thread(target = worker.listen_tasks)
+	execute_tasks_thread = threading.Thread(target = worker.execute_tasks)
+	
+	listen_tasks_thread.start()
+	execute_tasks_thread.start()
+	
+	listen_tasks_thread.join()
+	execute_tasks_thread.join()
