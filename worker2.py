@@ -7,13 +7,16 @@ import sys
 import random
 import threading
 
+from logger import workerLogger
+
 lock1 = threading.Lock()
 
 class Worker:
 
 	class Task:
 		
-		def __init__(self, task_id, duration, start_time):
+		def __init__(self, job_id, task_id, duration, start_time):
+			self.job_id = job_id
 			self.task_id = task_id
 			self.duration = duration
 			self.start_time = start_time
@@ -23,6 +26,9 @@ class Worker:
 		self.id = worker_id
 		self.port = port
 		self.execution_pool = []
+		#initialize loggers
+		self.w = workerLogger(worker_id)
+		self.w.initLog()
 	
 	def listen_tasks(self):
 		
@@ -38,12 +44,13 @@ class Worker:
 			
 			
 			task_info = json.loads(t)
+			job_id = task_info["job_id"]
 			task_id = task_info["task_id"]
 			task_duration = task_info["duration"]
 			
 			print("rec", task_id)
 				
-			task = self.Task(task_id, task_duration, time.time())
+			task = self.Task(job_id, task_id, task_duration, time.time())
 
 			print("in", task.task_id)			
 			
@@ -64,10 +71,12 @@ class Worker:
 				#time.sleep(1)
 			else:
 				for i, task in enumerate(self.execution_pool):
-					task.elapsed_time += time.time() - task.start_time
+					now = time.time()
+					task.elapsed_time += now - task.start_time
 					if(task.elapsed_time >= task.duration):
 						self.execution_pool.pop(i)
 						self.send_update(task)
+						self.w.workerTimer(task.job_id, task.task_id, task.start_time, now, self.id)
 				#time.sleep(1)
 			lock1.release()
 			time.sleep(1)

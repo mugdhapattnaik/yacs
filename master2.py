@@ -8,6 +8,7 @@ import random
 import threading
 
 from queue import Queue
+from logger import masterLogger
 
 lock1 = threading.Lock()
 lock2 = threading.Lock()
@@ -35,11 +36,11 @@ class Master:
 			self.num_map_tasks = len(request["map_tasks"])
 			
 			for mt in request["map_tasks"]:
-				self.map_tasks.put({"task_id": mt["task_id"], "duration": mt["duration"]})
+				self.map_tasks.put({"job_id": self.id, "task_id": mt["task_id"], "duration": mt["duration"]})
 				master.tasks[mt["task_id"]] = {"job_id": self.id, "type": "map"}
 			
 			for rt in request["reduce_tasks"]:
-				self.reduce_tasks.put({"task_id": rt["task_id"], "duration": rt["duration"]})
+				self.reduce_tasks.put({"job_id": self.id, "task_id": rt["task_id"], "duration": rt["duration"]})
 				master.tasks[rt["task_id"]] = {"job_id": self.id, "type": "reduce"}
 
 	def __init__(self, config, sch_algo='RR'):
@@ -62,6 +63,10 @@ class Master:
 			self.worker_ids.append(worker_config["worker_id"])
 			self.workers[worker_config["worker_id"]] = self.Worker(worker_config)
 		
+		#initializing loggers
+		self.ml = masterLogger()	
+		self.ml.initLog(self.sch_algo, self.worker_ids, self.workers)
+	
 	def pr_workers(self):
 
 		for i in self.worker_ids:
@@ -101,6 +106,7 @@ class Master:
 					continue
 				
 				job = self.request_queue.get()
+				self.ml.logtime(job.id)
 #				print("sc1")
 				
 #				tmp = list(job.map_tasks.queue)
@@ -118,6 +124,8 @@ class Master:
 					self.send_task(map_task, worker)
 					print("========SENT MAP TASK=========", map_task["task_id"])
 					self.pr_workers()
+#WITHIN OR OUTSIDE CRITICAL SECTION					
+					self.ml.prLog(self.worker_ids, self.workers, time.time())
 					lock2.release()	
 			
 	def listen_updates(self):
