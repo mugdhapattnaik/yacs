@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
 import json
-#import numpy as np
-#import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.pyplot as plt
 from statistics import mean, median
 
 master = open("logs/master_log.txt", "r")
@@ -16,6 +16,9 @@ for w in config["workers"]:
 jobs = {}
 tasks = {}
 job_ids = []
+time_intervals = []
+num_tasks = {}
+job_start_times = {}
 task_start_times = {}
 count_m = 0
 count_w = 0
@@ -28,35 +31,45 @@ for line in master.readlines():
         if len(l) == 2:
             job_id, job_start = l
             job_start = float(job_start)
-            print(job_id,job_start)
             job_ids.append(job_id)
-            end_times = []
-            for i in worker_ids:
-                w = "logs/w" + str(i) + "_log.txt"
-                worker_file = open(w,"r")
-                task_start_times[i] = []
-                time_interval = 1
-                for line in worker_file.readlines():
-                    if count_m != (3 + len(worker_ids)):
-                        count_m += 1
-                    else: 
-                        j, t, st, end = line.strip().split()
-                        st = float(st)
-                        end = float(end)
-                        if j == job_id:
-                            end_times.append(end)
-                        tasks[j+t] = (end - st)
-                        task_start_times[i].append(st)
-            jobs[job_id] = round((max(end_times) - job_start), 8)
-            
+            job_start_times[job_id] = job_start
+        else:
+            time_intervals.append(float(l[-1]))
+            l.pop(-1)
+            for i in l:
+                id, n = i.split(":")
+                num_tasks[id] = n
 
+for ji in job_ids:
+    jobs[ji] = []
+
+for i in worker_ids:
+    w = "logs/w" + str(i) + "_log.txt"
+    worker_file = open(w,"r")
+    task_start_times[i] = []
+    count_w = 0
+    
+    for line in worker_file.readlines():
+        if count_w != 3:
+            count_w += 1
+        else: 
+            j, t, st, end, id = line.strip().split() 
+            st = float(st)
+            end = float(end)       
+            jobs[j].append(end)
+            tasks[j+t] = (end - st)
+            task_start_times[i].append(st)
+
+for j in jobs:
+    jobs[j] = round((max(jobs[j]) - job_start_times[j]), 8)
+      
 #Not sure where these should be shown
 job_mean = mean(jobs[k] for k in jobs)
 job_median = median(jobs[k] for k in jobs)
 task_mean = mean(tasks[k] for k in tasks)
 task_median = median(tasks[k] for k in tasks)
 
-'''
+
 #Graph showing all the completion times for all the tasks
 part1_tasks_fig = plt.figure()
 part1_tasks_ax = part1_tasks_fig.add_axes([0,0,1,1])
@@ -73,9 +86,9 @@ part1_jobs_fig.savefig("logs/job_completion.png")
 #Graph showing number of tasks on each machine against time
 part2_fig = plt.figure()
 part2_ax = part2_fig.add_axes([0,0,1,1])
-'''
 
-#print(task_start_times)  
+#print(jobs)
+#print(tasks)  
 #print(job_mean)
 #print(task_mean)
 #print(job_median)
