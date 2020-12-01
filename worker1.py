@@ -7,6 +7,7 @@ import sys
 import random
 import threading
 
+lock = threading.Lock()
 
 class Worker:
 
@@ -21,7 +22,7 @@ class Worker:
 	def __init__(self, worker_id, port):
 		self.id = worker_id
 		self.port = port
-		self.execution_pool = set()
+		self.execution_pool = []
 		
 		'''
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -48,9 +49,10 @@ class Worker:
 		worker_socket.listen(1)
 		
 		while True:
+		
 			task_conn, addr = worker_socket.accept()
-			if(addr[1] != '127.0.0.1'):
-				continue
+			#if(addr[1] != '127.0.0.1'):
+			#	continue
 			t = task_conn.recv(2048).decode()
 			task_conn.close()
 			
@@ -58,31 +60,40 @@ class Worker:
 			task_id = task_info["task_id"]
 			task_duration = task_info["duration"]
 			
-			task = Task(task_id, task_duration, time.time())
+			print("rec", task_id)
 			
-			self.execution_pool.add(task)
+			task = self.Task(task_id, task_duration, time.time())
+			
+			lock.acquire()
+			self.execution_pool.append(task)
+			lock.release()
 		
 	def execute_tasks(self):
 		
+		print("threadddd")
 		while True:
+			lock.acquire()
+			print(self.execution_pool)
 			
-			if(not self.execution_pool):
+			if(len(self.execution_pool) == 0):
 				time.sleep(1)
 			else:
-				for task in self.execution_pool:
+				for i, task in enumerate(self.execution_pool):
 					task.elapsed_time += time.time() - task.start_time
 					if(task.elapsed_time >= task.duration):
-						self.execution_pool.remove(task)
-						send_update(task)
+						self.execution_pool.pop(i)
+						self.send_update(task)
 				time.sleep(1)
+			lock.release()
 
 	def send_update(self, task):
 		finished_task = {"worker_id": self.id, "task_id": task.task_id}
 		updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		updates_port = 5001
-		updates_socket.connect((host, updates_port))
+		updates_socket.connect(('localhost', updates_port))
 		message = json.dumps(finished_task).encode()
 		updates_socket.send(message)
+		print("sent")
 		updates_socket.close()
 
 if __name__ == '__main__':
