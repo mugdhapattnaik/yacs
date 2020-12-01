@@ -57,7 +57,7 @@ for i in worker_ids:
             st = float(st)
             end = float(end)       
             jobs[j].append(end)
-            tasks[j+t] = (end - st)
+            tasks[j+"_"+t] = (end - st)
             task_start_times[i].append(st)
 
 for j in jobs:
@@ -71,9 +71,13 @@ task_median = median(tasks[k] for k in tasks)
 
 
 #Graph showing all the completion times for all the tasks
-part1_tasks_fig = plt.figure()
-part1_tasks_ax = part1_tasks_fig.add_axes([0,0,1,1])
-#to be completed 
+plt.bar(list(tasks.keys()),list(tasks.values()))
+plt.xticks(fontsize=6.5)
+plt.xticks(rotation=45)
+plt.ylabel('Completion time(s)')
+plt.xlabel('JobID_TaskID')
+plt.savefig("graphs/task_completion.png", bbox_inches="tight")
+
 
 #Graph showing all the completion times for all the jobs
 job_ids = ["Job "+i for i in job_ids]
@@ -81,17 +85,15 @@ part1_jobs_fig = plt.figure()
 part1_jobs_ax = part1_jobs_fig.add_axes([0.1, 0.1, 0.85, 0.85])
 part1_jobs_ax.bar(job_ids,list(jobs.values()))
 part1_jobs_ax.set_ylabel('Completion time(s)')
-part1_jobs_ax.set_xlabel('job ID')
-part1_jobs_fig.savefig("logs/job_completion.png")
+part1_jobs_ax.set_xlabel('JobID')
+part1_jobs_fig.savefig("graphs/job_completion.png")
 
 
 #Graph showing number of tasks on each machine against time
 part2_fig = plt.figure()
 part2_ax = part2_fig.add_axes([0,0,1,1])
 
-#print(jobs)
-#print(tasks)  
-#print(job_mean)
-#print(task_mean)
-#print(job_median)
-#print(task_median)
+print("Mean of job completion times = ", job_mean)
+print("Mean of task completion times = ", task_mean)
+print("Median of job completion times = ", job_median)
+print("Median of task completion times = ", task_median)
