@@ -78,8 +78,10 @@ part1_tasks_ax = part1_tasks_fig.add_axes([0,0,1,1])
 #Graph showing all the completion times for all the jobs
 job_ids = ["Job "+i for i in job_ids]
 part1_jobs_fig = plt.figure()
-part1_jobs_ax = part1_jobs_fig.add_axes([0,0,1,1])
+part1_jobs_ax = part1_jobs_fig.add_axes([0.1, 0.1, 0.85, 0.85])
 part1_jobs_ax.bar(job_ids,list(jobs.values()))
+part1_jobs_ax.set_ylabel('Completion time(s)')
+part1_jobs_ax.set_xlabel('job ID')
 part1_jobs_fig.savefig("logs/job_completion.png")
 
 
