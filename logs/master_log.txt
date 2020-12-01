@@ -1,0 +1,14 @@
+$$$ date: 2020-12-01 19:05:33.255451 <class 'method'> $$$
+
+Worker_id: 1	Total Slots: 5	Port number: 4000
+Worker_id: 2	Total Slots: 7	Port number: 4001
+Worker_id: 3	Total Slots: 3	Port number: 4002
+
+0 1606829736.9527197
+1:1 2:0 3:0
+1 1606829737.395616
+1:2 2:0 3:0
+1:3 2:0 3:0
+1:4 2:0 3:0
+2 1606829738.8022907
+1:5 2:0 3:0

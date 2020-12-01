@@ -28,7 +28,7 @@ class Worker:
 		
 		worker_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		worker_socket.bind(('', self.port))
-		worker_socket.listen(1)
+		worker_socket.listen(10)
 		
 		while True:
 		
@@ -40,24 +40,24 @@ class Worker:
 			task_info = json.loads(t)
 			task_id = task_info["task_id"]
 			task_duration = task_info["duration"]
-			#task_conn.close()
 			
 			print("rec", task_id)
-			
-			lock1.acquire()	
+				
 			task = self.Task(task_id, task_duration, time.time())
 
 			print("in", task.task_id)			
-						
+			
+			lock1.acquire()			
 			self.execution_pool.append(task)
 			lock1.release()
+			task_conn.close()
 		
 	def execute_tasks(self):
 		
-		print("threadddd")
+		#print("threadddd")
 		while True:
 			lock1.acquire()
-			print(self.execution_pool)
+		#	print(self.execution_pool)
 			
 			if(len(self.execution_pool) == 0):
 				pass
