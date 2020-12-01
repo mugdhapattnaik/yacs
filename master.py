@@ -10,9 +10,8 @@ import threading
 from queue import Queue
 from logger import masterLogger
 
-lock1 = threading.Lock()
 lock2 = threading.Lock()
-lock3 = threading.Lock()
+
 
 class Master:
 
@@ -44,8 +43,14 @@ class Master:
 				master.tasks[rt["task_id"]] = {"job_id": self.id, "type": "reduce"}
 
 	def __init__(self, config, sch_algo='RR'):
+		
+		for worker_config in config["workers"]:
+			self.worker_ids.append(worker_config["worker_id"])
+			self.workers[worker_config["worker_id"]] = self.Worker(worker_config)
 
 		if sch_algo == 'RR':
+			worker_ids.sort()
+			self.current_worker_id = worker_ids[0]
 			self.sch_algo = self.round_robin_algo
 		elif sch_algo == 'RANDOM':
 			self.sch_algo = self.random_algo
@@ -71,7 +76,7 @@ class Master:
 
 		for i in self.worker_ids:
 			worker = self.workers[i]
-			print("Worker: ", worker.id, worker.total_slots, worker.active_slots)
+			print("Worker ", worker.id, ": ", worker.total_slots, worker.active_slots)
 
 	def pr_jobs(self):
 		
@@ -91,7 +96,7 @@ class Master:
 			
 			request = json.loads(r)
 			
-			print("lr")
+			print("Listening for job requests...")
 			
 			job = self.Job(self, request)
 			self.request_queue.put(job)
@@ -102,29 +107,20 @@ class Master:
 	def schedule(self):
 			while True:
 				
-				if(self.request_queue.empty()):
+				if self.request_queue.empty():
 					continue
 				
 				job = self.request_queue.get()
 				self.ml.logtime(job.id)
-#				print("sc1")
 				
-#				tmp = list(job.map_tasks.queue)
-#				for e in tmp:
-#					print(e)
-				
-				while(not job.map_tasks.empty()):
-								
-					print("sc2")
+				while not job.map_tasks.empty():
 					worker = self.sch_algo()
 					print(worker.id)
 					map_task = job.map_tasks.get()
-					
-#					print(map_task["task_id"])
-					self.send_task(map_task, worker)
+					selsf.send_task(map_task, worker)
 					print("========SENT MAP TASK=========", map_task["task_id"])
 					self.pr_workers()
-#WITHIN OR OUTSIDE CRITICAL SECTION					
+					#WITHIN OR OUTSIDE CRITICAL SECTION					
 					self.ml.prLog(self.worker_ids, self.workers, time.time())
 					lock2.release()	
 			
@@ -140,7 +136,7 @@ class Master:
 			m = conn.recv(8192).decode()
 			
 			message = json.loads(m)
-			print("lu")
+			print("Received update from worker")
 			
 			worker_id = message["worker_id"]
 			task_id = message["task_id"]
@@ -159,7 +155,7 @@ class Master:
 				
 				worker_id, task_id = self.update_queue.get()
 				
-				print("ud")
+				print("Updating task dependencies")
 				
 				worker = self.workers[worker_id]
 				job_id = self.tasks[task_id]["job_id"]
@@ -200,7 +196,7 @@ class Master:
 			c.send(message)
 	
 	def random_algo(self):
-		print("randalgo")
+		print("Task scheduled using randalgo")
 		while True:
 			worker_id = random.choice(self.worker_ids)
 			lock2.acquire()
@@ -211,19 +207,33 @@ class Master:
 			lock2.release()
 
 	def round_robin_algo(self):
-		print("robin")
+		print("Task scheduled using roundrobin")
 		while True:
-			worker_ids = sorted(self.worker_ids)
-			for worker_id in worker_ids:
-				lock2.acquire()
-				worker = self.workers[worker_id]
-				if(worker.available()):
-					worker.active_slots += 1
-					return worker
-				lock2.release()
+			#worker_ids = sorted(self.worker_ids)
+			lock2.acquire()
+			curr_index = self.worker_ids.index(self.current_worker_id)
+			next_index = (curr_index + 1) % len(self.worker_ids)
+			current_worker = self.workers[self.current_worker_id]
+			if current_worker.available():
+				worker.active_slots += 1
+				self.current_worker_id = self.worker_ids[next_index]
+				return worker
+			lock2.release()
+			else:
+				worker_found = False
+				i = next_index
+				while not worker_found:
+					lock2.acquire()
+					worker = self.workers[i]
+					if(worker.available()):
+						worker.active_slots += 1
+						self.current_worker_id = self.worker_ids[next_index]
+						return worker
+					i = (i + 1) % len(self.worker_ids)
+					lock2.release()
 
 	def least_loaded_algo(self):
-		print("leastloaded")
+		print("Task scheduled using leastloaded")
 		while True:
 			lock2.acquire()
 			least_loaded = self.workers[self.worker_ids[0]]
