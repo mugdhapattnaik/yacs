@@ -22,14 +22,23 @@ task_start_times = {}
 task_end_times = {}
 count_m = 0
 count_w = 0
-
+scheduling_algo = ["Round Robin", "Random", "Least Loaded"]
+sch = 0
 for w in config["workers"]:
     worker_ids.append(w["worker_id"])   
 
 
 
 for line in master.readlines():
-    if count_m != (3 + len(worker_ids)):
+    if count_m == 0:
+        if("random_algo" in line):
+            sch = 1
+        elif("least_loaded_algo" in line):
+            sch = 2
+        else:
+            sch = 0
+        count_m+=1
+    elif count_m != (3 + len(worker_ids)):
         count_m += 1
     else:  
         l = line.strip().split()
@@ -130,10 +139,11 @@ for i in task_start_times:
 			j+=1
 			
 	plt.plot(time, number_tasks, label=s+str(i))
+plt.title(scheduling_algo[sch]+" Scheduling")
 plt.legend(loc="upper right")
 plt.xlabel("Time (s)")
 plt.ylabel("No. of tasks")
-plt.savefig("graphs/time_vs_tasks.png", bbox_inches="tight")
+plt.savefig("graphs/time_vs_tasks_"+scheduling_algo[sch]+".png", bbox_inches="tight")
 plt.close()
 #print(number_tasks)
 #print(time)
