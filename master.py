@@ -58,7 +58,6 @@ class Master:
 		self.worker_ids.sort()
 		
 		if sch_algo == 'RR':
-			self.worker_ids.sort()
 			self.current_worker_id = self.worker_ids[0]
 			self.sch_algo = self.round_robin_algo
 		elif sch_algo == 'RANDOM':
@@ -113,7 +112,6 @@ class Master:
 				
 				while not job.map_tasks.empty():
 					worker = self.sch_algo()
-					print(worker.id)
 					map_task = job.map_tasks.get()
 					self.send_task(map_task, worker)
 					print("========SENT MAP TASK=========", map_task["task_id"])
@@ -159,15 +157,13 @@ class Master:
 				job_id = self.tasks[task_id]["job_id"]
 				task_type = self.tasks[task_id]["type"]
 				job = self.jobs[job_id]
-				
 #				self.pr_jobs()
 					
 #				if(job.map_tasks.empty() and job.reduce_tasks.empty()):
 #					continue
 
 				if(task_type == "map"):
-					job.num_map_tasks -= 1
-									
+					job.num_map_tasks -= 1		
 				if(job.num_map_tasks == 0 or task_type == "reduce"):
 					if(job.reduce_tasks.empty()):
 						lock2.acquire()
@@ -210,8 +206,8 @@ class Master:
 			curr_index = self.worker_ids.index(self.current_worker_id)
 			next_index = (curr_index + 1) % len(self.worker_ids)
 			current_worker = self.workers[self.current_worker_id]
-			lock2.acquire()
 			if current_worker.available():
+				lock2.acquire()
 				current_worker.active_slots += 1
 				self.current_worker_id = self.worker_ids[next_index]
 				return current_worker
@@ -220,12 +216,15 @@ class Master:
 				i = self.worker_ids[next_index]
 				while not worker_found:
 					worker = self.workers[i]
+					lock2.acquire()
 					if(worker.available()):
 						worker_found = True
 						worker.active_slots += 1
 						self.current_worker_id = self.worker_ids[next_index]
 						return worker
+					lock2.release()
 					i = self.worker_ids[(i + 1) % len(self.worker_ids)]
+					
 			lock2.release()
 
 	def least_loaded_algo(self):
