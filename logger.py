@@ -15,7 +15,7 @@ class masterLogger():
 		self.logmsg = ''
 		
 	def initLog(self, sch_alg, wid, wrk):
-		self.logmsg = '$$$ \tdate: ' + str(datetime.datetime.now()) + f" {sch_alg} $$$\n\n"
+		self.logmsg = '$$$ \tdate: ' + str(datetime.datetime.now()) + f" {sch_alg.__name__} $$$\n\n"
 		for ele in wid:
 			self.logmsg += 'Worker_id: ' + str(ele) + '\tTotal Slots: ' + str(wrk[ele].total_slots) + '\tPort number: ' + str(wrk[ele].port) + '\n'
 		self.logmsg+='\n'
