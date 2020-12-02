@@ -37,9 +37,22 @@ if __name__ == '__main__':
 	number_of_requests=int(sys.argv[1])
 	if(os.path.exists("requests.txt")):
 		f = open("requests.txt","r")
+		current_time=last_request_time=time.time()
+		arrivals = np.random.exponential(1, size=number_of_requests)
+		num = 0
 		for line in f.readlines():
+		
+			if num == number_of_requests:
+				break
 			l = json.loads(line)
+			interval=arrivals[num]
+			while True:
+				if(time.time()-last_request_time>=interval):
+					break
+				time.sleep(0.01)
 			send_request(l)
+			last_request_time=time.time()
+			num +=1
 		f.close()
 	else:
 	#np.random.seed(0)
