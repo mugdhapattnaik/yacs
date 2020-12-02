@@ -85,7 +85,7 @@ plt.xticks(rotation=90)
 plt.ylabel('Completion time(s)')
 plt.xlabel('JobID_TaskID')
 plt.savefig("graphs/task_completion.png", bbox_inches="tight")
-
+plt.close()
 
 #Graph showing all the completion times for all the jobs
 job_ids = ["Job "+i for i in job_ids]
@@ -95,7 +95,7 @@ part1_jobs_ax.bar(job_ids,list(jobs.values()))
 part1_jobs_ax.set_ylabel('Completion time(s)')
 part1_jobs_ax.set_xlabel('JobID')
 part1_jobs_fig.savefig("graphs/job_completion.png")
-
+plt.close()
 
 #Graph showing number of tasks on each machine against time
 s = 'Worker '
@@ -134,6 +134,7 @@ plt.legend(loc="upper right")
 plt.xlabel("Time (s)")
 plt.ylabel("No. of tasks")
 plt.savefig("graphs/time_vs_tasks.png", bbox_inches="tight")
+plt.close()
 #print(number_tasks)
 #print(time)
 	
