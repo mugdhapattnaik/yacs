@@ -4,7 +4,6 @@ import json
 import socket
 import time
 import sys
-import random
 import threading
 
 from logger import workerLogger

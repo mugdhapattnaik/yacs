@@ -19,6 +19,7 @@ time_intervals = []
 num_tasks = {}
 job_start_times = {}
 task_start_times = {}
+task_end_times = {}
 count_m = 0
 count_w = 0
 
@@ -52,6 +53,7 @@ for i in worker_ids:
     w = "logs/w" + str(i) + "_log.txt"
     worker_file = open(w,"r")
     task_start_times[i] = []
+    task_end_times[i] = []    
     count_w = 0
     
     for line in worker_file.readlines():
@@ -64,6 +66,7 @@ for i in worker_ids:
             jobs[j].append(end)
             tasks[j+"_"+t] = (end - st)
             task_start_times[i].append(st)
+            task_end_times[i].append(end)
 
 for j in jobs:
     jobs[j] = round((max(jobs[j]) - job_start_times[j]), 8)
@@ -78,11 +81,11 @@ task_median = median(tasks[k] for k in tasks)
 #Graph showing all the completion times for all the tasks
 plt.bar(list(tasks.keys()),list(tasks.values()))
 plt.xticks(fontsize=6.5)
-plt.xticks(rotation=45)
+plt.xticks(rotation=90)
 plt.ylabel('Completion time(s)')
 plt.xlabel('JobID_TaskID')
 plt.savefig("graphs/task_completion.png", bbox_inches="tight")
-
+plt.close()
 
 #Graph showing all the completion times for all the jobs
 job_ids = ["Job "+i for i in job_ids]
@@ -92,11 +95,51 @@ part1_jobs_ax.bar(job_ids,list(jobs.values()))
 part1_jobs_ax.set_ylabel('Completion time(s)')
 part1_jobs_ax.set_xlabel('JobID')
 part1_jobs_fig.savefig("graphs/job_completion.png")
-
+plt.close()
 
 #Graph showing number of tasks on each machine against time
+s = 'Worker '
+for i in task_start_times:
+	task = 0
+	number_tasks = []
+	time = []
+	j=0
+	k=0
+	while (j<len(task_start_times[i]) and k<len(task_end_times[i])):
+		if(task_start_times[i][j] < task_end_times[i][k]):
+			task+=1
+			number_tasks.append(task)
+			time.append(task_start_times[i][j]-task_start_times[i][0])
+			j+=1
+		else:
+			task-=1
+			number_tasks.append(task)
+			time.append(task_end_times[i][k]-task_start_times[i][0])
+			k+=1
+	if(j == len(task_start_times[i])):
+		while(k<len(task_end_times[i])):
+			task-=1
+			number_tasks.append(task)
+			time.append(task_end_times[i][k]-task_start_times[i][0])
+			k+=1
+	else:
+		while(j<len(task_start_times[i])):	
+			task+=1
+			number_tasks.append(task)
+			time.append(task_start_times[i][j]-task_start_times[i][0])
+			j+=1
+			
+	plt.plot(time, number_tasks, label=s+str(i))
+plt.legend(loc="upper right")
+plt.xlabel("Time (s)")
+plt.ylabel("No. of tasks")
+plt.savefig("graphs/time_vs_tasks.png", bbox_inches="tight")
+plt.close()
+#print(number_tasks)
+#print(time)
+	
 
-print(num_tasks) # format is key = workerId_time, value = number of tasks at the time
+#print(num_tasks) # format is key = workerId_time, value = number of tasks at the time
 print("Mean of job completion times = ", job_mean)
 print("Mean of task completion times = ", task_mean)
 print("Median of job completion times = ", job_median)

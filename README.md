@@ -1,9 +1,73 @@
 # YACS
  
-A simple centralised scheduler for Map-Reduce tasks.
+A simple centralised scheduler for Map-Reduce jobs.
 
-The path to the config file, and the scheduling algorithm (RANDOM, RR, LL) are given to the Master as command line arguments.   
-E.g. ` python Master.py /path/to/config.json RR `
+## Setting up the environment
 
-The port and worker_id are supplied as command line arguments to each Worker.  
-E.g. ` python Worker.py 4000 1 `
+Create a Python3 virtual environment.  
+~~~ 
+pip3 install python3-venv  
+python3 -m venv name-of-env  
+~~~  
+Activate the virtual environment  
+~~~
+source name-of-env/bin/activate  
+~~~  
+
+Clone this repository. 
+~~~ 
+git clone https://github.com/mugdhapattnaik/yacs.git  
+cd yacs  
+~~~
+
+Install the dependencies.  
+~~~
+pip3 install -r requirements.txt
+~~~  
+
+To configure the number of Workers and their attributes (workerID, number of slots, port numbers, host IPs), edit the `config.json` using any text editor
+  
+## Running the files:
+Run the following on a terminal tab for the **Master** process. The path to the config file, and the scheduling algorithm (RANDOM, RR, LL) are given to the Master as command line arguments.    
+~~~ 
+python master.py /path/to/config.json <scheduling_algo> 
+~~~  
+
+Run the following on *n* terminal tabs for *n* **Worker** processes. The port and worker_id are supplied as command line arguments to each Worker.   
+~~~
+python worker.py <port> <worker_id>  
+~~~  
+In a separate terminal tab, initiate job requests by running:
+~~~
+python3 requests.py <number_of_requests>
+~~~
+  
+## Analytics
+
+Run the following after completing task executions.  
+~~~
+python3 analysis.py
+~~~  
+To view the generated graphs:
+~~~
+cd graphs
+~~~   
+  
+## To stop all running Master and Workers
+Run this command in a separate terminal tab.  
+**WARNING** - Doing so will stop other currently running python3 scripts   
+~~~
+pkill python3
+~~~
+Simple check to see all python processes that are currently running:  
+~~~
+ps au | grep python3
+~~~
+The processes can be individually stopped manually by pressing the keys `Ctrl+C` two times.  
+  
+## Deactivate the environment 
+
+To deactivate the environment, run:
+~~~
+deactivate
+~~~
