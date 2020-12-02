@@ -54,7 +54,9 @@ class Master:
 		for worker_config in config["workers"]:
 			self.worker_ids.append(worker_config["worker_id"])
 			self.workers[worker_config["worker_id"]] = self.Worker(worker_config)
-
+			
+		self.worker_ids.sort()
+		
 		if sch_algo == 'RR':
 			self.worker_ids.sort()
 			self.current_worker_id = self.worker_ids[0]
@@ -84,7 +86,7 @@ class Master:
 		requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		requests_port = 5000
 		requests_socket.bind(('', requests_port))
-		requests_socket.listen(10)
+		requests_socket.listen()
 		
 		while True:
 			req_conn, addr = requests_socket.accept()	
@@ -205,28 +207,26 @@ class Master:
 	def round_robin_algo(self):
 		print("Task scheduled using roundrobin")
 		while True:
-			#worker_ids = sorted(self.worker_ids)
-			lock2.acquire()
 			curr_index = self.worker_ids.index(self.current_worker_id)
 			next_index = (curr_index + 1) % len(self.worker_ids)
 			current_worker = self.workers[self.current_worker_id]
+			lock2.acquire()
 			if current_worker.available():
 				current_worker.active_slots += 1
 				self.current_worker_id = self.worker_ids[next_index]
 				return current_worker
-				lock2.release()
 			else:
 				worker_found = False
-				i = next_index
+				i = self.worker_ids[next_index]
 				while not worker_found:
-					lock2.acquire()
 					worker = self.workers[i]
 					if(worker.available()):
+						worker_found = True
 						worker.active_slots += 1
 						self.current_worker_id = self.worker_ids[next_index]
 						return worker
-					i = (i + 1) % len(self.worker_ids)
-					lock2.release()
+					i = self.worker_ids[(i + 1) % len(self.worker_ids)]
+			lock2.release()
 
 	def least_loaded_algo(self):
 		print("Task scheduled using leastloaded")
@@ -267,7 +267,6 @@ if __name__ == '__main__':
 	listen_updates_thread.start()
 	schedule_thread.start()
 	update_dependencies_thread.start()
-	
 	
 	listen_requests_thread.join()
 	listen_updates_thread.join()
