@@ -108,13 +108,13 @@ class Master:
 			
 			while not job.map_tasks.empty():
 				worker = self.sch_algo()
+				map_task = job.map_tasks.get()
+				print("========== SENT MAP TASK", map_task["task_id"], "TO WORKER", worker.id, "==========")
 				self.pr_workers()
 				self.ml.prLog(self.worker_ids, self.workers, time.time())
 				lock.release()	
 
-				map_task = job.map_tasks.get()
 				self.send_task(map_task, worker)
-				print("========SENT MAP TASK=========", map_task["task_id"])
 			
 	def listen_updates(self):
 		worker_updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -133,8 +133,6 @@ class Master:
 			worker_id = message["worker_id"]
 			task_id = message["task_id"]
 			self.update_queue.put((worker_id, task_id))
-						
-			print("==============COMPLETED TASK==========", task_id, "FROM", worker_id)
 			
 			conn.close()
 			
@@ -147,14 +145,15 @@ class Master:
 			
 			worker_id, task_id = self.update_queue.get()
 			
-			print("Updating task dependencies")
-			
 			worker = self.workers[worker_id]
 			job_id = self.tasks[task_id]["job_id"]
 			task_type = self.tasks[task_id]["type"]
 			
+			print("========== WORKER", worker.id, "COMPLETED TASK", task_id, "==========")
+			print("Updating task dependencies")
+			
 			job = self.jobs[job_id]
-			self.pr_jobs()
+#			self.pr_jobs()
 			
 			if(task_type == "map"):
 				job.num_map_tasks -= 1		
@@ -163,14 +162,19 @@ class Master:
 				if(job.reduce_tasks.empty()):
 					lock.acquire()
 					worker.active_slots -= 1
+					self.pr_workers()
 					lock.release()
 				else:
 					reduce_task = job.reduce_tasks.get()
 					self.send_task(reduce_task, worker)
-					print("========SENT REDUCE TASK=======", reduce_task["task_id"])
+					lock.acquire()
+					print("========== SENT REDUCE TASK", reduce_task["task_id"], "TO WORKER", worker.id, "==========")
+					self.pr_workers()
+					lock.release()
 			else:
 				lock.acquire()
 				worker.active_slots -= 1
+				self.pr_workers()
 				lock.release()
 				
 	def send_task(self, task, worker):
