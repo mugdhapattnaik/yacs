@@ -108,12 +108,13 @@ class Master:
 			
 			while not job.map_tasks.empty():
 				worker = self.sch_algo()
-				map_task = job.map_tasks.get()
-				self.send_task(map_task, worker)
-				print("========SENT MAP TASK=========", map_task["task_id"])
 				self.pr_workers()
 				self.ml.prLog(self.worker_ids, self.workers, time.time())
 				lock.release()	
+
+				map_task = job.map_tasks.get()
+				self.send_task(map_task, worker)
+				print("========SENT MAP TASK=========", map_task["task_id"])
 			
 	def listen_updates(self):
 		worker_updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
