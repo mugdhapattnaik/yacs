@@ -27,19 +27,29 @@ class Master:
 		
 	class Job:
 		
+		class Task:
+			
+			def __init__(self, task_id, job_id, duration, task_type):
+				self.id = task_id
+				self.job_id = job_id
+				self.duration = duration
+				self.type = task_type
+		
 		def __init__(self, master, request):
 			self.id = request["job_id"]
 			self.map_tasks = Queue()
 			self.reduce_tasks = Queue()
 			self.num_map_tasks = len(request["map_tasks"])
 			
-			for mt in request["map_tasks"]:
-				self.map_tasks.put({"job_id": self.id, "task_id": mt["task_id"], "duration": mt["duration"]})
-				master.tasks[mt["task_id"]] = {"job_id": self.id, "type": "map"}
-			
-			for rt in request["reduce_tasks"]:
-				self.reduce_tasks.put({"job_id": self.id, "task_id": rt["task_id"], "duration": rt["duration"]})
-				master.tasks[rt["task_id"]] = {"job_id": self.id, "type": "reduce"}
+			for t in request["map_tasks"]:
+				task = self.Task(t["task_id"], self.id, t["duration"], "map")
+				self.map_tasks.put(task)
+				master.tasks[task.id] = task
+
+			for t in request["reduce_tasks"]:
+				task = self.Task(t["task_id"], self.id, t["duration"], "reduce")
+				self.reduce_tasks.put(task)
+				master.tasks[task.id] = task
 
 	def __init__(self, config, sch_algo='RR'):
 		
@@ -47,8 +57,9 @@ class Master:
 		self.workers = {}
 		self.jobs = {}
 		self.tasks = {}
-		self.request_queue = Queue()
-		self.update_queue = Queue()
+		self.requests_q = Queue()
+		self.updates_q = Queue()
+		self.independent_tasks_q = Queue()
 		
 		for worker_config in config["workers"]:
 			self.worker_ids.append(worker_config["worker_id"])
@@ -79,9 +90,19 @@ class Master:
 			print("Worker ", worker.id, ": ", worker.total_slots, worker.active_slots)
 
 	def pr_jobs(self):
-		
+		print("Jobs:")
 		for k, v in self.jobs.items():
-			print("Jobs: ", k, ":", v)
+			print(k, ": ")
+			print("map_tasks:")
+			while(not v.map_tasks.empty()):
+				t = v.map_tasks.get()
+				print(t.id, t.duration, t.type)
+
+			print("reduce_tasks:")
+			while(not v.reduce_tasks.empty()):
+				t = v.reduce_tasks.get()
+				print(t.id, t.duration, t.type)				
+				
 
 	def listen_requests(self):
 		requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -96,30 +117,24 @@ class Master:
 			request = json.loads(r)
 			
 			job = self.Job(self, request)
-			self.request_queue.put(job)
+			self.requests_q.put(job)
 			self.jobs[request["job_id"]] = job
 			
 			req_conn.close()
-			
-	def schedule(self):
-		while True:
 
-			if self.request_queue.empty():
+	def process_requests(self):
+
+		while True:
+			if self.requests_q.empty():
 				continue
 			
-			job = self.request_queue.get()
+			job = self.requests_q.get()
 			self.ml.logtime(job.id)
 			
 			while not job.map_tasks.empty():
-				worker = self.sch_algo()
 				map_task = job.map_tasks.get()
-				print("========== SENT MAP TASK", map_task["task_id"], "TO WORKER", worker.id, "==========")
-				self.pr_workers()
-				self.ml.prLog(self.worker_ids, self.workers, time.time())
-				lock.release()	
-
-				self.send_task(map_task, worker)
-			
+				self.independent_tasks_q.put(map_task)
+	
 	def listen_updates(self):
 		worker_updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		worker_updates_port = 5001
@@ -136,57 +151,65 @@ class Master:
 			
 			worker_id = message["worker_id"]
 			task_id = message["task_id"]
-			self.update_queue.put((worker_id, task_id))
+			self.updates_q.put((worker_id, task_id))
 			
 			conn.close()
-			
-	def update_dependencies(self):
-			
-		while True:
-			
-			if(self.update_queue.empty()):
+	
+	def process_updates(self):
+		
+		while True:	
+			if(self.updates_q.empty()):
 				continue
 			
-			worker_id, task_id = self.update_queue.get()
+			worker_id, task_id = self.updates_q.get()
 			
 			worker = self.workers[worker_id]
-			job_id = self.tasks[task_id]["job_id"]
-			task_type = self.tasks[task_id]["type"]
+			task = self.tasks[task_id]
+			job = self.jobs[task.job_id]
 			
-			print("========== WORKER", worker.id, "COMPLETED TASK", task_id, "==========")
-			print("Updating task dependencies")
+			print("========== WORKER", worker.id, "COMPLETED TASK", task.id, "==========")
+			print("Updating task dependencies")			
 			
-			job = self.jobs[job_id]
-#			self.pr_jobs()
+			lock.acquire()
+			worker.active_slots -= 1
+			self.pr_workers()
+			lock.release()
 			
-			if(task_type == "map"):
-				job.num_map_tasks -= 1		
+			if(task.type == "map"):
+				job.num_map_tasks -= 1
+				
+				if(job.num_map_tasks == 0):
+					while not job.reduce_tasks.empty():
+						reduce_task = job.reduce_tasks.get()
+						self.independent_tasks_q.put(reduce_task)
 
-			if(job.num_map_tasks == 0 or task_type == "reduce"):
-				if(job.reduce_tasks.empty()):
-					lock.acquire()
-					worker.active_slots -= 1
-					self.pr_workers()
-					lock.release()
-				else:
-					reduce_task = job.reduce_tasks.get()
-					self.send_task(reduce_task, worker)
-					lock.acquire()
-					print("========== SENT REDUCE TASK", reduce_task["task_id"], "TO WORKER", worker.id, "==========")
-					self.pr_workers()
-					lock.release()
-			else:
-				lock.acquire()
-				worker.active_slots -= 1
-				self.pr_workers()
-				lock.release()
+	def schedule(self):
+		
+		while True:
+			if self.independent_tasks_q.empty():
+				continue
+			
+			task = self.independent_tasks_q.get()
+			
+			worker = self.sch_algo()
+			
+			if(task.type == "map"):
+				print("========== SENT MAP TASK", task.id, "TO WORKER", worker.id, "==========")
+			elif(task.type == "reduce"):
+				print("========== SENT REDUCE TASK", task.id, "TO WORKER", worker.id, "==========")
+			self.pr_workers()
+			self.ml.prLog(self.worker_ids, self.workers, time.time())
+			lock.release()
+			
+			self.send_task(task, worker)
 				
 	def send_task(self, task, worker):
 		port = int(worker.port)
 
 		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
 			c.connect(('localhost', port))
-			message = json.dumps(task).encode()
+			message = {"task_id": task.id, "job_id": task.job_id, "duration": task.duration}
+			message = json.dumps(message).encode()
 			c.send(message)
 
 	def random_algo(self):
@@ -246,16 +269,19 @@ if __name__ == '__main__':
 	master = Master(config, scheduling_algo)
 	
 	listen_requests_thread = threading.Thread(target = master.listen_requests)
+	process_requests_thread = threading.Thread(target = master.process_requests)
 	listen_updates_thread = threading.Thread(target = master.listen_updates)
+	process_updates_thread = threading.Thread(target = master.process_updates)
 	schedule_thread = threading.Thread(target = master.schedule)
-	update_dependencies_thread = threading.Thread(target = master.update_dependencies)
 	
 	listen_requests_thread.start()
+	process_requests_thread.start()	
 	listen_updates_thread.start()
+	process_updates_thread.start()
 	schedule_thread.start()
-	update_dependencies_thread.start()
 	
 	listen_requests_thread.join()
+	process_requests_thread.join()	
 	listen_updates_thread.join()
+	process_updates_thread.join()
 	schedule_thread.join()
-	update_dependencies_thread.join()
