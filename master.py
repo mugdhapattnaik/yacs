@@ -53,6 +53,10 @@ class Master:
 		for worker_config in config["workers"]:
 			self.worker_ids.append(worker_config["worker_id"])
 			self.workers[worker_config["worker_id"]] = self.Worker(worker_config)
+		
+		if(not worker_ids):
+			print("No workers to schedule task to")
+			exit(1)
 			
 		self.worker_ids.sort()
 		
@@ -186,19 +190,20 @@ class Master:
 			c.send(message)
 
 	def random_algo(self):
-		print("Task scheduled using randalgo")
+		print("Task scheduled using random_algo")
 
 		while True:
 			worker_id = random.choice(self.worker_ids)
-			lock.acquire()
 			worker = self.workers[worker_id]
+			
+			lock.acquire()
 			if(worker.available()):
 				worker.active_slots += 1
 				return worker
 			lock.release()
 
 	def round_robin_algo(self):
-		print("Task scheduled using roundrobin")
+		print("Task scheduled using round_robin_algo")
 
 		while True:
 			curr_index = self.worker_ids.index(self.current_worker_id)
@@ -226,11 +231,12 @@ class Master:
 			lock.release()
 
 	def least_loaded_algo(self):
-		print("Task scheduled using leastloaded")
+		print("Task scheduled using least_loaded_algo")
 
 		while True:
-			lock.acquire()
 			least_loaded = self.workers[self.worker_ids[0]]
+			
+			lock.acquire()
 			max_slots = least_loaded.total_slots - least_loaded.active_slots
 			for worker_id in self.worker_ids[1::]:
 				worker = self.workers[worker_id]
@@ -242,8 +248,7 @@ class Master:
 			worker = least_loaded
 			if(worker.available()):
 				worker.active_slots += 1
-				return worker
-			
+				return worker							
 			lock.release()
 
 
