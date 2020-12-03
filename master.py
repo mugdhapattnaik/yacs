@@ -57,8 +57,6 @@ class Master:
 		self.workers = {}
 		self.jobs = {}
 		self.tasks = {}
-		self.requests_q = Queue()
-		self.updates_q = Queue()
 		self.independent_tasks_q = Queue()
 		
 		for worker_config in config["workers"]:
@@ -66,7 +64,7 @@ class Master:
 			self.workers[worker_config["worker_id"]] = self.Worker(worker_config)
 		
 		if(not self.worker_ids):
-			print("No workers to schedule task to")
+			print("No workers to schedule tasks to")
 			exit(1)
 			
 		self.worker_ids.sort()
@@ -103,7 +101,6 @@ class Master:
 				t = v.reduce_tasks.get()
 				print(t.id, t.duration, t.type)				
 				
-
 	def listen_requests(self):
 		requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		requests_port = 5000
@@ -116,24 +113,18 @@ class Master:
 			r = req_conn.recv(2048).decode()
 			request = json.loads(r)
 			
+			print(request)
+			
 			job = self.Job(self, request)
-			self.requests_q.put(job)
 			self.jobs[request["job_id"]] = job
-			
-			req_conn.close()
 
-	def process_requests(self):
-
-		while True:
-			if self.requests_q.empty():
-				continue
-			
-			job = self.requests_q.get()
 			self.ml.logtime(job.id)
 			
 			while not job.map_tasks.empty():
 				map_task = job.map_tasks.get()
 				self.independent_tasks_q.put(map_task)
+
+			req_conn.close()
 	
 	def listen_updates(self):
 		worker_updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -144,31 +135,20 @@ class Master:
 		
 		while True:
 			conn, addr = worker_updates_socket.accept()
-			m = conn.recv(8192).decode()
+			m = conn.recv(2048).decode()
 			
 			message = json.loads(m)
 			print("Received update from worker")
 			
 			worker_id = message["worker_id"]
 			task_id = message["task_id"]
-			self.updates_q.put((worker_id, task_id))
-			
-			conn.close()
-	
-	def process_updates(self):
-		
-		while True:	
-			if(self.updates_q.empty()):
-				continue
-			
-			worker_id, task_id = self.updates_q.get()
-			
+
 			worker = self.workers[worker_id]
 			task = self.tasks[task_id]
 			job = self.jobs[task.job_id]
 			
 			print("========== WORKER", worker.id, "COMPLETED TASK", task.id, "==========")
-			print("Updating task dependencies")			
+			print("Updating task dependencies")	
 			
 			lock.acquire()
 			worker.active_slots -= 1
@@ -182,6 +162,8 @@ class Master:
 					while not job.reduce_tasks.empty():
 						reduce_task = job.reduce_tasks.get()
 						self.independent_tasks_q.put(reduce_task)
+			
+			conn.close()
 
 	def schedule(self):
 		
@@ -269,19 +251,13 @@ if __name__ == '__main__':
 	master = Master(config, scheduling_algo)
 	
 	listen_requests_thread = threading.Thread(target = master.listen_requests)
-	process_requests_thread = threading.Thread(target = master.process_requests)
 	listen_updates_thread = threading.Thread(target = master.listen_updates)
-	process_updates_thread = threading.Thread(target = master.process_updates)
 	schedule_thread = threading.Thread(target = master.schedule)
 	
 	listen_requests_thread.start()
-	process_requests_thread.start()	
 	listen_updates_thread.start()
-	process_updates_thread.start()
 	schedule_thread.start()
 	
 	listen_requests_thread.join()
-	process_requests_thread.join()	
 	listen_updates_thread.join()
-	process_updates_thread.join()
 	schedule_thread.join()
