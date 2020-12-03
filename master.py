@@ -54,14 +54,14 @@ class Master:
 			self.worker_ids.append(worker_config["worker_id"])
 			self.workers[worker_config["worker_id"]] = self.Worker(worker_config)
 		
-		if(not worker_ids):
+		if(not self.worker_ids):
 			print("No workers to schedule task to")
 			exit(1)
 			
 		self.worker_ids.sort()
 		
 		if sch_algo == 'RR':
-			self.current_worker_id = self.worker_ids[0]
+			self.rr_worker_id_index = 0
 			self.sch_algo = self.round_robin_algo
 		elif sch_algo == 'RANDOM':
 			self.sch_algo = self.random_algo
@@ -204,30 +204,15 @@ class Master:
 
 	def round_robin_algo(self):
 		print("Task scheduled using round_robin_algo")
-
+	
 		while True:
-			curr_index = self.worker_ids.index(self.current_worker_id)
-			next_index = (curr_index + 1) % len(self.worker_ids)
-			current_worker = self.workers[self.current_worker_id]
-			if current_worker.available():
-				lock.acquire()
-				current_worker.active_slots += 1
-				self.current_worker_id = self.worker_ids[next_index]
-				return current_worker
-			else:
-				worker_found = False
-				i = self.worker_ids[next_index]
-				while not worker_found:
-					worker = self.workers[i]
-					lock.acquire()
-					if(worker.available()):
-						worker_found = True
-						worker.active_slots += 1
-						self.current_worker_id = self.worker_ids[next_index]
-						return worker
-					lock.release()
-					i = self.worker_ids[(i + 1) % len(self.worker_ids)]
-					
+			rr_worker = self.workers[self.worker_ids[self.rr_worker_id_index]]
+			self.rr_worker_id_index = (self.rr_worker_id_index + 1) % len(self.worker_ids)
+			
+			lock.acquire()
+			if(rr_worker.available()):
+				rr_worker.active_slots += 1
+				return rr_worker
 			lock.release()
 
 	def least_loaded_algo(self):
