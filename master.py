@@ -113,7 +113,7 @@ class Master:
 			r = req_conn.recv(2048).decode()
 			request = json.loads(r)
 			
-			print(request)
+			print("\nReceived request with job ID : ", request["job_id"])
 			
 			job = self.Job(self, request)
 			self.jobs[request["job_id"]] = job
