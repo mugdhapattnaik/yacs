@@ -83,7 +83,7 @@ class Master:
 			print("ERROR: No workers to schedule tasks to")
 			exit(1)
 			
-		############################### why sort?
+		#sorted for round_robin_algo
 		self.worker_ids.sort()
 		
 		#sch_algo holds 
