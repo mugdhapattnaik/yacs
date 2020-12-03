@@ -82,7 +82,7 @@ class Master:
 	def listen_requests(self):
 		requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		requests_port = 5000
-		requests_socket.bind(('', requests_port))
+		requests_socket.bind(('localhost', requests_port))
 		requests_socket.listen()
 		
 		while True:
@@ -174,11 +174,10 @@ class Master:
 				lock.release()
 				
 	def send_task(self, task, worker):
-		host = 'localhost'
 		port = int(worker.port)
 
 		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as c:
-			c.connect((host, port))
+			c.connect(('localhost', port))
 			message = json.dumps(task).encode()
 			c.send(message)
 

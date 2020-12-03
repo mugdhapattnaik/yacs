@@ -32,7 +32,7 @@ class Worker:
 	def listen_tasks(self):
 		
 		worker_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		worker_socket.bind(('', self.port))
+		worker_socket.bind(('localhost', self.port))
 		worker_socket.listen(10)
 		print("Waiting for tasks...")
 		while True:
@@ -86,7 +86,7 @@ class Worker:
 		updates_socket.close()
 
 if __name__ == '__main__':
-	host = 'localhost'
+
 	port = int(sys.argv[1])
 	worker_id = int(sys.argv[2])
 
