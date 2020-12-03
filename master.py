@@ -228,7 +228,7 @@ class Master:
 			self.pr_workers()
 			self.ml.prLog(self.worker_ids, self.workers, time.time())
 			
-			########################## why release lock?
+			#releases lock acquired in the scheduling algorithm function
 			lock.release()
 			
 			#send task information to worker
@@ -260,7 +260,7 @@ class Master:
 				worker.active_slots += 1 #increments number of slots occupied with tasks
 				return worker
 
-			############ does this release the lock?
+			#release lock
 			lock.release()
 
 	def round_robin_algo(self):
@@ -279,8 +279,8 @@ class Master:
 			if(rr_worker.available()):
 				rr_worker.active_slots += 1 #increments number of slots occupied with tasks
 				return rr_worker
-
-			############ does this release the lock?
+			
+			#release lock
 			lock.release()
 
 	def least_loaded_algo(self):
@@ -310,7 +310,7 @@ class Master:
 				worker.active_slots += 1 #increments number of slots occupied with tasks
 				return worker
 
-			############ does this release the lock?							
+			#release lock							
 			lock.release()
 
 
