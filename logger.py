@@ -1,4 +1,4 @@
-#logging.py
+#!/usr/bin/python3
 
 import multiprocessing as mp
 import threading as t
