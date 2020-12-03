@@ -166,9 +166,7 @@ class Master:
 					lock.release()
 				else:
 					reduce_task = job.reduce_tasks.get()
-					lock.acquire()
 					self.send_task(reduce_task, worker)
-					lock.release()					
 					print("========SENT REDUCE TASK=======", reduce_task["task_id"])
 			else:
 				lock.acquire()
