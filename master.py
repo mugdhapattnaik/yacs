@@ -68,7 +68,7 @@ class Master:
 		self.workers = {} #dict of worker objects, referenced by worker_id
 		self.jobs = {} #dict of job objects, referenced by job_id
 		self.tasks = {} #dict of tasks referenced by task_id
-		self.independent_tasks_q = Queue()
+		self.independent_tasks_q = Queue() #list of tasks not having unfulfilled dependencies
 		
 		for worker_config in config["workers"]:
 			self.worker_ids.append(worker_config["worker_id"])
