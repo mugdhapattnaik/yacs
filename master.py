@@ -124,7 +124,7 @@ class Master:
 			#extract data from json request
 			request = json.loads(r)
 			
-			print("\nReceived request of job ID : ", request["job_id"])
+			print("Received request of job ID : ", request["job_id"])
 			
 			#create a Job object
 			job = self.Job(self, request)
