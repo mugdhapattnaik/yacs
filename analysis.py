@@ -3,6 +3,7 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mp
 #import seaborn as sns #maybe ?
 from statistics import mean, median
 
@@ -92,13 +93,19 @@ job_median = median(jobs[k] for k in jobs)
 task_mean = mean(tasks[k] for k in tasks)
 task_median = median(tasks[k] for k in tasks)
 
+#labels for the mean and median lines
+mean_patch = mp.Patch(color='crimson', label="Mean")
+median_patch = mp.Patch(color='midnightblue', label="Median")
 
 #Graph showing all the completion times for all the tasks
-plt.bar(list(tasks.keys()),list(tasks.values()))
+plt.bar(list(tasks.keys()),list(tasks.values()), color ='thistle')
 plt.xticks(fontsize=6.5)
 plt.xticks(rotation=90)
 plt.ylabel('Completion time(s)')
 plt.xlabel('JobID_TaskID')
+plt.axhline(task_mean, color ='crimson', linestyle = "--")
+plt.axhline(task_median, color ='midnightblue', linestyle = "--")
+plt.legend(handles = [mean_patch,median_patch])
 plt.savefig("graphs/task_completion.png", bbox_inches="tight")
 plt.close()
 
@@ -106,10 +113,13 @@ plt.close()
 job_ids = ["Job "+i for i in job_ids]
 part1_jobs_fig = plt.figure()
 part1_jobs_ax = part1_jobs_fig.add_axes([0.1, 0.1, 0.85, 0.85])
-part1_jobs_ax.bar(job_ids,list(jobs.values()))
+part1_jobs_ax.bar(job_ids,list(jobs.values()), color ='thistle')
 part1_jobs_ax.tick_params(axis = 'x',labelrotation=45)
 part1_jobs_ax.set_ylabel('Completion time(s)')
 part1_jobs_ax.set_xlabel('JobID')
+plt.axhline(task_mean, color ='crimson', linestyle = "--")
+plt.axhline(task_median, color ='midnightblue', linestyle = "--")
+plt.legend(handles = [mean_patch,median_patch])
 part1_jobs_fig.savefig("graphs/job_completion.png", bbox_inches="tight")
 plt.close()
 
