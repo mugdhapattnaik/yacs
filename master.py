@@ -105,21 +105,6 @@ class Master:
 			worker = self.workers[i]
 			print("Worker ", worker.id, ": ", worker.total_slots, worker.active_slots)
 
-	#reads master.jobs dictionary
-	def pr_jobs(self):
-		print("Jobs:")
-		for k, v in self.jobs.items():
-			print(k, ": ")
-			print("map_tasks:")
-			while(not v.map_tasks.empty()):
-				t = v.map_tasks.get()
-				print(t.id, t.duration, t.type)
-
-			print("reduce_tasks:")
-			while(not v.reduce_tasks.empty()):
-				t = v.reduce_tasks.get()
-				print(t.id, t.duration, t.type)				
-
 	#thread which listens for job requests
 	def listen_requests(self):
 		#TCP/IP socket
@@ -247,7 +232,7 @@ class Master:
 			c.send(message)	#send message
 
 	def random_algo(self):
-		print("Task scheduled using random_algo")
+		print("Scheduling task using random_algo")
 
 		while True:
 			#chooses a random worker
@@ -264,7 +249,7 @@ class Master:
 			lock.release()
 
 	def round_robin_algo(self):
-		print("Task scheduled using round_robin_algo")
+		print("Scheduling task using round_robin_algo")
 	
 		while True:
 			#get worker id of next worker to be scheduled
@@ -284,7 +269,7 @@ class Master:
 			lock.release()
 
 	def least_loaded_algo(self):
-		print("Task scheduled using least_loaded_algo")
+		print("Scheduling task using least_loaded_algo")
 
 		while True:
 			#initialize variable with first worker in list
@@ -336,7 +321,3 @@ if __name__ == '__main__':
 	listen_requests_thread.join()
 	listen_updates_thread.join()
 	schedule_thread.join()
-
-
-
-#master.tasks not used anywhere -L56, L64
