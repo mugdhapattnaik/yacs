@@ -108,9 +108,10 @@ class Master:
 
 		#TCP/IP socket
 		requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		requests_port = 5000
+		requests_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 		#listen on localhost and port 5000
+		requests_port = 5000
 		requests_socket.bind(('localhost', requests_port))	
 		requests_socket.listen() #listen to incoming requests
 		

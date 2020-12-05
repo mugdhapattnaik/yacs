@@ -36,6 +36,7 @@ class Worker:
 
 		#TCP/IP socket
 		worker_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		worker_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		worker_socket.bind(('localhost', self.port)) #localhost, assigned port from config file
 		worker_socket.listen(1)	#listen to 1 master
 		
