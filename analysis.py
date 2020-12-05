@@ -163,9 +163,9 @@ for i in task_start_times:      #for each worker
 			time.append(task_start_times[i][j]-job_start_times['0'])
 			j+=1
 #	plt.plot(time, number_tasks, label=s+str(i))
-	number_tasks = [i-0.5*shift for i in number_tasks]
+	number_tasks = [i-shift for i in number_tasks]
 	time = [i+shift for i in time]
-	plt.step(time, number_tasks, label=s+str(i), where = "pre", alpha = 0.9)
+	plt.step(time, number_tasks, label=s+str(i), where = "post", alpha = 0.9)
 	shift += 0.02
 plt.title(scheduling_algo[sch]+" Scheduling")
 plt.legend(loc="upper right")
