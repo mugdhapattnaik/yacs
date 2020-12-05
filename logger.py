@@ -10,7 +10,7 @@ import datetime
 #logging in master.py
 class masterLogger():
 	#master log file name
-	fname = 'logs/master_log.txt'
+	fname = 'logs/master.log'
 	
 	def __init__(self):
 		self.logmsg = ''
@@ -58,7 +58,7 @@ class workerLogger():
 	#initialize log file name
 	def __init__(self, worker_id):
 		self.logmsg = ''
-		self.fname = f'logs/w{worker_id}_log.txt'
+		self.fname = f'logs/w{worker_id}.log'
 		self.worker_id = str(worker_id)
 		
 	#worker's header log

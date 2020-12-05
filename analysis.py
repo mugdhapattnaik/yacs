@@ -7,7 +7,7 @@ import matplotlib.patches as mp
 #import seaborn as sns #maybe ?
 from statistics import mean, median
 
-master = open("logs/master_log.txt", "r")
+master = open("logs/master.log", "r")
 config_file = open("config.json", 'r')
 config = json.load(config_file)
 config_file.close()
@@ -62,7 +62,7 @@ for ji in job_ids:
 #for each worker
 for i in worker_ids:
     #read log file
-    w = "logs/w" + str(i) + "_log.txt"
+    w = "logs/w" + str(i) + ".log"
     worker_file = open(w,"r")
 
     task_start_times[i] = []    #dict of task start times referenced by worker_id
