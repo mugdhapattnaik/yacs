@@ -62,7 +62,7 @@ for (( i=0; i<3; i++ )); do   #for each algorithm
     printf "All log files moved\n"
 
     printf "Done with %s\n\n" ${ALGO[$i]}
-    sleep 10
+    sleep 2
 
 done
 
