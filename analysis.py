@@ -106,7 +106,7 @@ plt.xlabel('JobID_TaskID')
 plt.axhline(task_mean, color ='crimson', linestyle = "--")
 plt.axhline(task_median, color ='midnightblue', linestyle = "--")
 plt.legend(handles = [mean_patch,median_patch])
-plt.savefig("graphs/task_completion.png", bbox_inches="tight")
+plt.savefig("graphs/task_completion_"+scheduling_algo[sch]+".png", bbox_inches="tight")
 plt.close()
 
 #Graph showing all the completion times for all the jobs
@@ -120,7 +120,7 @@ part1_jobs_ax.set_xlabel('JobID')
 plt.axhline(job_mean, color ='crimson', linestyle = "--")
 plt.axhline(job_median, color ='midnightblue', linestyle = "--")
 plt.legend(handles = [mean_patch,median_patch])
-part1_jobs_fig.savefig("graphs/job_completion.png", bbox_inches="tight")
+part1_jobs_fig.savefig("graphs/job_completion_"+scheduling_algo[sch]+".png", bbox_inches="tight")
 plt.close()
 
 #Graph showing number of tasks on each machine against time
