@@ -28,6 +28,23 @@ pip3 install -r requirements.txt
 To configure the number of Workers and their attributes (workerID, number of slots, port numbers, host IPs), edit the `config.json` using any text editor
   
 ## Running the files:
+
+***1. Run all algorithms using loop_script.sh***
+
+This script runs all the algorithms and performs analysis on each of them, including drawing comparisons. This script rewrites the logs and graphs directories. It ensures the addresses used by the processes are released and the processes are terminated.
+
+~~~
+./loop_script.sh <starting worker_id> <starting port> <number of workers>
+~~~
+For the default config.json the above command would translate to:
+~~~
+./loop_script.sh 1 4000 3
+~~~
+
+It's important to note that the shell script does not read from the config.json file, but assumes a series of worker_id and port numbers being used. The number of workers to be specified must be the same as the number of entries in the config.json file. 
+
+***2. Run the processes individually on different terminals***
+
 Run the following on a terminal tab for the **Master** process. The path to the config file, and the scheduling algorithm (RANDOM, RR, LL) are given to the Master as command line arguments.    
 ~~~ 
 python master.py /path/to/config.json <scheduling_algo> 
