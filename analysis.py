@@ -211,12 +211,12 @@ if sch_name != 'ALL':
         count_lines = 1
         for l in compare.readlines():
             count_lines += 1
-        if count_lines <= 3:
-            compare = open("graphs/means_medians.txt", "a")
-            compare.write(sch_name + "\t" + str(job_mean) + "\t" + str(task_mean) + "\t" + str(job_median) + "\t" + str(task_median)  + "\n")
-            compare.close()
-        else:
-            compare.close()
+        if count_lines > 3:
+            os.remove("graphs/means_medians.txt")
+            
+        compare = open("graphs/means_medians.txt", "a")
+        compare.write(sch_name + "\t" + str(job_mean) + "\t" + str(task_mean) + "\t" + str(job_median) + "\t" + str(task_median)  + "\n")
+        compare.close()
     except:
         compare = open("graphs/means_medians.txt", "a")
         compare.write(sch_name + "\t" + str(job_mean) + "\t" + str(task_mean) + "\t" + str(job_median) + "\t" + str(task_median)  + "\n")
