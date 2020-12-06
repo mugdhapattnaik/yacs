@@ -75,7 +75,7 @@ for (( i=0; i<$NUM_ALGO; i++ )); do   #for each algorithm
     printf "All log files moved\n"
     
     #RUN ANALYSIS
-    printf "Running anlaysis.\n"
+    printf "Running analysis.\n"
     python3 analysis.py ${ALGO[$i]}
     
     printf "Done with %s\n\n" ${ALGO[$i]}
