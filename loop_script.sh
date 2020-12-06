@@ -56,7 +56,7 @@ for (( i=0; i<$NUM_ALGO; i++ )); do   #for each algorithm
         echo Number of workers that have completed processing: $ctr
 
         if [[ "$ctr" -eq "$num_workers-1" ]]; then #if all jobs completed
-            printf "All jobs have been completed\n. Running anlaysis.\n"
+            printf "All jobs have been completed.\n"
             sleep .5
             killall python3;    #terminate processes
             break
@@ -64,9 +64,6 @@ for (( i=0; i<$NUM_ALGO; i++ )); do   #for each algorithm
             sleep 1
         fi
     done
-
-    #RUN ANALYSIS
-    python3 analysis.py
 
     #MOVE LOGS TO RESPECTIVE ALGORITHM'S DIRECTORIES
     mv ./logs/master.log ${LOG_DIR[$i]}             #master log
@@ -77,9 +74,13 @@ for (( i=0; i<$NUM_ALGO; i++ )); do   #for each algorithm
     done
     printf "All log files moved\n"
     
+    #RUN ANALYSIS
+    printf "Running anlaysis.\n"
+    python3 analysis.py ${ALGO[$i]}
+    
     printf "Done with %s\n\n" ${ALGO[$i]}
     sleep 2
 done
 
 #RUN FINAL ANALYSIS
-#python3 analysis.py all
+python3 analysis.py ALL
