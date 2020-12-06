@@ -47,12 +47,12 @@ It's important to note that the shell script does not read from the config.json 
 
 Run the following on a terminal tab for the **Master** process. The path to the config file, and the scheduling algorithm (RANDOM, RR, LL) are given to the Master as command line arguments.    
 ~~~ 
-python master.py /path/to/config.json <scheduling_algo> 
+python3 master.py /path/to/config.json <scheduling_algo> 
 ~~~  
 
 Run the following on *n* terminal tabs for *n* **Worker** processes. The port and worker_id are supplied as command line arguments to each Worker.   
 ~~~
-python worker.py <port> <worker_id>  
+python3 worker.py <port> <worker_id>  
 ~~~  
 In a separate terminal tab, initiate job requests by running:
 ~~~
