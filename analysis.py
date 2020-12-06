@@ -10,19 +10,25 @@ from statistics import mean, median
 
 sch_name = str(sys.argv[1])
 sch = 0
+master_path = "logs/" + sch_name+ "/master.log"
+worker_path = "logs/" + sch_name+ "/w"
 if sch_name == 'RR':
     sch = 0
 elif sch_name == 'LL':
     sch = 2
 elif sch_name == 'RANDOM':
     sch = 1
-
+elif sch_name == 'current':
+    master_path = "logs/master.log"
+    worker_path = "logs/w"
+    
 try:
     os.makedirs("graphs/" + sch_name)
 except:
     pass
+    
 if sch_name != 'ALL':
-    master = open("logs/" + sch_name+ "/master.log", "r")
+    master = open(master_path, "r")
     config_file = open("config.json", 'r')
     config = json.load(config_file)
     config_file.close()
@@ -72,7 +78,7 @@ if sch_name != 'ALL':
     #for each worker
     for i in worker_ids:
         #read log file
-        w = "logs/" + sch_name+ "/w" + str(i) + ".log"
+        w = worker_path + str(i) + ".log"
         worker_file = open(w,"r")
 
         task_start_times[i] = []    #dict of task start times referenced by worker_id
@@ -206,7 +212,7 @@ if sch_name != 'ALL':
         compare = open("graphs/means_medians.txt", "a")
         compare.write(sch_name + "\t" + str(job_mean) + "\t" + str(task_mean) + "\t" + str(job_median) + "\t" + str(task_median)  + "\n")
         compare.close()
-
+        
 #plots the comparison graph for final analysis
 else:
     os.rmdir("graphs/" + sch_name)
