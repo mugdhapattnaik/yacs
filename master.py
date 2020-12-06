@@ -195,9 +195,10 @@ class Master:
 
 		#TCP/IP socket
 		worker_updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		worker_updates_port = 5001
+		worker_updates_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 		#listen on localhost and port 5001
+		worker_updates_port = 5001
 		worker_updates_socket.bind(('localhost', worker_updates_port))
 		worker_updates_socket.listen() #backlog default, reasonable number of connections
 		
