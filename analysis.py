@@ -2,6 +2,7 @@
 
 import json
 import sys
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
@@ -16,6 +17,10 @@ elif sch_name == 'LL':
 elif sch_name == 'RANDOM':
     sch = 1
 
+try:
+    os.makedirs("graphs/" + sch_name)
+except:
+    pass
 if sch_name != 'ALL':
     master = open("logs/" + sch_name+ "/master.log", "r")
     config_file = open("config.json", 'r')
@@ -204,6 +209,7 @@ if sch_name != 'ALL':
 
 #plots the comparison graph for final analysis
 else:
+    os.rmdir("graphs/" + sch_name)
     job_means = {}
     task_means = {}
     job_medians = {}
