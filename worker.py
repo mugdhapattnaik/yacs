@@ -5,10 +5,36 @@ import socket
 import time
 import sys
 import threading
-
-from logger import workerLogger
+import datetime
 
 lock = threading.Lock()
+
+#logging in worker
+class workerLogger():
+	
+	#initialize log file name
+	def __init__(self, worker_id):
+		self.logmsg = ''
+		self.fname = f'logs/w{worker_id}.log'
+		self.worker_id = str(worker_id)
+		
+	#worker's header log
+	def initLog(self):
+		self.logmsg = '$$$ \tdate: ' + str(datetime.datetime.now()) + "\t$$$\n\n"
+		self.logmsg += 'job_id\ttask_id\tstart_time\t\tend_time\tworker_id\n'
+		
+		
+		with open(self.fname, 'w') as f:	#write log into file
+			f.write(self.logmsg)
+		self.logmsg = ''	#reset log string	
+
+	#logs start and end time of task
+	def workerTimer(self, job_id, task_id, st_time, ed_time, worker_id):
+		logmsg = str(job_id) + "\t" + str(task_id) + "\t" + str(st_time) + "\t" + str(ed_time) + "\t" + self.worker_id + "\n"
+			
+		with open(self.fname, 'a') as f:	#write log into file
+		    f.write(logmsg)
+		    
 
 class Worker:
 
