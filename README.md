@@ -27,9 +27,7 @@ pip3 install -r requirements.txt
 
 To configure the number of Workers and their attributes (workerID, number of slots, port numbers, host IPs), edit the `config.json` using any text editor
   
-## Running the files:
-
-***1. Run all algorithms using loop_script.sh***
+## Run all algorithms using loop_script.sh
 
 This script runs all the algorithms and performs analysis on each of them, including drawing comparisons. This script rewrites the logs and graphs directories. It ensures the addresses used by the processes are released and the processes are terminated.
 
@@ -43,7 +41,9 @@ For the default config.json the above command would translate to:
 
 It's important to note that the shell script does not read from the config.json file, but assumes a series of worker_id and port numbers being used. The number of workers to be specified must be the same as the number of entries in the config.json file. 
 
-***2. Run the processes individually on different terminals***
+### Run the processes individually on different terminals
+
+***1. Running the processes***
 
 Run the following on a terminal tab for the **Master** process. The path to the config file, and the scheduling algorithm (RANDOM, RR, LL) are given to the Master as command line arguments.    
 ~~~ 
@@ -59,7 +59,7 @@ In a separate terminal tab, initiate job requests by running:
 python3 requests.py <number_of_requests>
 ~~~
   
-## Analytics
+***2. Analytics***
 
 Run the following after completing task executions.  
 ~~~
@@ -70,7 +70,7 @@ To view the generated graphs:
 cd graphs
 ~~~   
   
-## To stop all running Master and Workers
+***3. To stop all running Master and Workers***
 Run this command in a separate terminal tab.  
 **WARNING** - Doing so will stop other currently running python3 scripts   
 ~~~
