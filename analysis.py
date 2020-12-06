@@ -32,6 +32,8 @@ if sch_name != 'ALL':
     config_file = open("config.json", 'r')
     config = json.load(config_file)
     config_file.close()
+    if sch_name == 'current':
+        os.rmdir("graphs/" + sch_name)
 
     worker_ids = []
     jobs = {}
@@ -109,7 +111,14 @@ if sch_name != 'ALL':
     job_median = median(jobs[k] for k in jobs)
     task_mean = mean(tasks[k] for k in tasks)
     task_median = median(tasks[k] for k in tasks)
-
+    
+    if sch == 0:
+        sch_name = "RR"
+    elif sch == 1:
+        sch_name = "RANDOM"
+    elif sch == 2:
+        sch_name = "LL"
+    
     #labels for the mean and median lines
     mean_patch = mp.Patch(color='crimson', label="Mean")
     median_patch = mp.Patch(color='midnightblue', label="Median")
