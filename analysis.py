@@ -8,7 +8,16 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mp
 from statistics import mean, median
 
-sch_name = str(sys.argv[1])
+try:
+	sch_name = str(sys.argv[1])
+except:
+	print("ERROR\t: Incorrect usage")
+	print("Usage\t: python3 analysis.py <arg>")
+	print("\n<arg> can be:-\n")
+	print("current\t: to generate graphs (tasks vs time; jobs vs time; running tasks in each worker vs time) for the most recently generated logs\n")
+	print("ALL\t: to generate comparison graphs for mean and median times for the last 3 scheduling algorithms. To be used after calling `python3 analysis.py current` for the 3 scheduling algorithms (RANDOM, RR, LL)")
+	print()
+	exit()
     
 if sch_name != 'ALL':
 

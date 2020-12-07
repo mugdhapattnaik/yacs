@@ -68,11 +68,11 @@ python3 analysis.py <args>
 ~~~
 args        meaning
 ========================     
-RR          to generate graphs for Round Robin algorithm  
-LL          to generate graphs for Least Loaded algorithm  
-RANDOM      to generate graphs for Random algorithm 
-current     to generate graphs for the most recently generated logs  
-ALL         to generate comparisons graphs for mean and median values across the various scheduling algorithms  
+<!--- RR          to generate graphs for Round Robin algorithm  --->
+<!--- LL          to generate graphs for Least Loaded algorithm  --->
+<!--- RANDOM      to generate graphs for Random algorithm --->
+current     to generate graphs (tasks vs time; jobs vs time; running tasks in each worker vs time) for the most recently generated logs
+ALL         to generate comparison graphs for mean and median times for the last 3 scheduling algorithms. To be used after calling `python3 analysis.py current` for the 3 scheduling algorithms (RANDOM, RR, LL)  
 ~~~
 To view the generated graphs:
 ~~~
