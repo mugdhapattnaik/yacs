@@ -19,6 +19,10 @@ class masterLogger():
 	
 	def __init__(self):
 		self.logmsg = ''
+		try:
+			os.makedirs("logs")
+		except:
+			pass
 		
 	#master's header log
 	def initLog(self, sch_alg, wid, wrk):

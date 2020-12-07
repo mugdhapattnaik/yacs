@@ -17,6 +17,10 @@ class workerLogger():
 		self.logmsg = ''
 		self.fname = f'logs/w{worker_id}.log'
 		self.worker_id = str(worker_id)
+		try:
+			os.makedirs("logs")
+		except:
+			pass
 		
 	#worker's header log
 	def initLog(self):
