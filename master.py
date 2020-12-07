@@ -182,7 +182,7 @@ class Master:
 			#index an entry in dictionary with job_id
 			self.jobs[request["job_id"]] = job
 
-			################# is this even being called?
+			#Log the time when master receives the request
 			self.ml.logtime(job.id)
 			
 			#queue all map tasks as independent tasks
