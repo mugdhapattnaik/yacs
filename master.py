@@ -117,7 +117,7 @@ class Master:
 		self.workers = {} #dict of worker objects, referenced by worker_id
 		self.jobs = {} #dict of job objects, referenced by job_id
 		self.tasks = {} #dict of tasks referenced by task_id
-		self.independent_tasks_q = Queue() #list of tasks not having unfulfilled dependencies
+		self.independent_tasks_q = Queue() #list of tasks not having any dependencies
 		
 		for worker_config in config["workers"]:
 			self.worker_ids.append(worker_config["worker_id"])
@@ -157,6 +157,7 @@ class Master:
 
 		#TCP/IP socket
 		requests_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		#Setting address to be reusable to bypass timeout  
 		requests_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 		#listen on localhost and port 5000
@@ -199,6 +200,7 @@ class Master:
 
 		#TCP/IP socket
 		worker_updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		#Setting address to be reusable to bypass timeout 
 		worker_updates_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 		#listen on localhost and port 5001
