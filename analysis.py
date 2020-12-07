@@ -9,31 +9,20 @@ import matplotlib.patches as mp
 from statistics import mean, median
 
 sch_name = str(sys.argv[1])
-sch = 0
-master_path = "logs/" + sch_name+ "/master.log"
-worker_path = "logs/" + sch_name+ "/w"
-if sch_name == 'RR':
-    sch = 0
-elif sch_name == 'LL':
-    sch = 2
-elif sch_name == 'RANDOM':
-    sch = 1
-elif sch_name == 'current':
-    master_path = "logs/master.log"
-    worker_path = "logs/w"
-    
-try:
-    os.makedirs("graphs/" + sch_name)
-except:
-    pass
     
 if sch_name != 'ALL':
+
+    master_path = "logs/" + sch_name+ "/master.log"
+    worker_path = "logs/" + sch_name+ "/w"
+
+    if sch_name == 'current':
+        master_path = "logs/master.log"
+        worker_path = "logs/w"
+
     master = open(master_path, "r")
     config_file = open("config.json", 'r')
     config = json.load(config_file)
     config_file.close()
-    if sch_name == 'current':
-        os.rmdir("graphs/" + sch_name)
 
     worker_ids = []
     jobs = {}
@@ -49,12 +38,25 @@ if sch_name != 'ALL':
     for w in config["workers"]:
         worker_ids.append(w["worker_id"])   
 
-
     #read master logs
     for line in master.readlines():
         #read first line and extract scheduling algorithm information
         if count_m == 0:
+            if("random_algo" in line):
+                sch = 1
+                sch_name = "RANDOM"
+            elif("least_loaded_algo" in line):
+                sch = 2
+                sch_name = "LL"
+            else:
+                sch = 0
+                sch_name = "RR"
             count_m+=1
+            
+            try:
+                os.makedirs(f"graphs/{sch_name}")
+            except:
+                pass
         
         #discard worker information lines - not relevant to analysis
         elif count_m != (3 + len(worker_ids)):
@@ -111,14 +113,7 @@ if sch_name != 'ALL':
     job_median = median(jobs[k] for k in jobs)
     task_mean = mean(tasks[k] for k in tasks)
     task_median = median(tasks[k] for k in tasks)
-    
-    if sch == 0:
-        sch_name = "RR"
-    elif sch == 1:
-        sch_name = "RANDOM"
-    elif sch == 2:
-        sch_name = "LL"
-    
+        
     #labels for the mean and median lines
     mean_patch = mp.Patch(color='crimson', label="Mean")
     median_patch = mp.Patch(color='midnightblue', label="Median")
@@ -184,12 +179,12 @@ if sch_name != 'ALL':
                 time.append(task_end_times[i][k]-job_start_times['0'])
                 k+=1
         else:
-            while(j<len(task_start_times[i])):	
+            while(j<len(task_start_times[i])):    
                 task+=1
                 number_tasks.append(task)
                 time.append(task_start_times[i][j]-job_start_times['0'])
                 j+=1
-    #	plt.plot(time, number_tasks, label=s+str(i))
+    #    plt.plot(time, number_tasks, label=s+str(i))
         number_tasks = [i-shift for i in number_tasks]
         time = [i+shift for i in time]
         plt.step(time, number_tasks, label=s+str(i), where = "post", alpha = 0.9)
@@ -224,13 +219,15 @@ if sch_name != 'ALL':
         
 #plots the comparison graph for final analysis
 else:
-    os.rmdir("graphs/" + sch_name)
     job_means = {}
     task_means = {}
     job_medians = {}
     task_medians = {}
 
-    c = open("graphs/means_medians.txt", "r")
+    try:
+        c = open("graphs/means_medians.txt", "r")
+    except:
+        print("ERROR: graphs/means_medians.txt does not exist")
 
     for line in c.readlines():
         algo, j_mean, t_mean, j_median, t_median = line.strip().split()
