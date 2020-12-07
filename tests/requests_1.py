@@ -38,12 +38,14 @@ if __name__ == '__main__':
 	#get number of requests to be generated
 	number_of_requests=int(sys.argv[1])
 	if(os.path.exists("requests.txt")):
-		f = open("requests.txt","r")
+		print("hi")
+		f = open("tests/requests.txt","r")
 		current_time=last_request_time=time.time()
 		arrivals = np.random.exponential(1, size=number_of_requests)
 		num = 0
+		print("hi")
 		for line in f.readlines():
-		
+			print("hi")
 			if num == number_of_requests:
 				break
 			l = json.loads(line)

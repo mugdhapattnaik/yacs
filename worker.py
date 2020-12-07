@@ -116,7 +116,7 @@ class Worker:
 						self.w.workerTimer(task.job_id, task.id, task.start_time, now, self.id)
 			lock.release()
 
-			time.sleep(1)	#wait until the next clock second
+#			time.sleep(1)	#wait until the next clock second
 
 	def send_update(self, task):
 
@@ -125,6 +125,7 @@ class Worker:
 
 		#TCP/IP socket
 		updates_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		updates_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		updates_port = 5001
 
 		#connect to master's update socket

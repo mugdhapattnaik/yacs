@@ -1,0 +1,13 @@
+Worker 3 waiting for tasks...
+Task 0_M2 received by Worker 3
+Worker 3 waiting for tasks...
+Task 1_M1 received by Worker 3
+Worker 3 waiting for tasks...
+Worker 3 completed Task 0_M2
+Update sent to master
+Worker 3 completed Task 1_M1
+Update sent to master
+Task 2_R1 received by Worker 3
+Worker 3 waiting for tasks...
+Worker 3 completed Task 2_R1
+Update sent to master

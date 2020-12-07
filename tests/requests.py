@@ -7,6 +7,8 @@ import sys
 import random
 import numpy as np
 
+random.seed(20)
+
 def create_job_request(job_id):
 	number_of_map_tasks=random.randrange(1,5)
 	number_of_reduce_tasks=random.randrange(1,3)

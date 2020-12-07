@@ -36,7 +36,8 @@ for (( i=0; i<$NUM_ALGO; i++ )); do   #for each algorithm
     #SEND JOB REQUESTS
     printf "Starting requests\n\n"
     sleep 2;    #allow for master process to begin
-    python3 -u ./tests/requests.py 5
+    python3 -u ./tests/requests_1.py 3
+#	python3 -u ./tests/requests_eval.py 10
 
     #WAIT FOR JOBS TO COMPLETE
     printf "\n\nWaiting for jobs to complete\n";

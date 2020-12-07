@@ -1,0 +1,139 @@
+Listening for job requests...
+Received request of job ID :  0
+Listening for job requests...
+Scheduling task using round_robin_algo
+========== SENT MAP TASK 0_M0 TO WORKER 1 ==========
+Worker  1 :  5 1
+Worker  2 :  5 0
+Worker  3 :  5 0
+Scheduling task using round_robin_algo
+========== SENT MAP TASK 0_M1 TO WORKER 2 ==========
+Worker  1 :  5 1
+Worker  2 :  5 1
+Worker  3 :  5 0
+Scheduling task using round_robin_algo
+========== SENT MAP TASK 0_M2 TO WORKER 3 ==========
+Worker  1 :  5 1
+Worker  2 :  5 1
+Worker  3 :  5 1
+Scheduling task using round_robin_algo
+========== SENT MAP TASK 0_M3 TO WORKER 1 ==========
+Worker  1 :  5 2
+Worker  2 :  5 1
+Worker  3 :  5 1
+Received request of job ID :  1
+Listening for job requests...
+Scheduling task using round_robin_algo
+========== SENT MAP TASK 1_M0 TO WORKER 2 ==========
+Worker  1 :  5 2
+Worker  2 :  5 2
+Worker  3 :  5 1
+Scheduling task using round_robin_algo
+========== SENT MAP TASK 1_M1 TO WORKER 3 ==========
+Worker  1 :  5 2
+Worker  2 :  5 2
+Worker  3 :  5 2
+Received request of job ID :  2
+Listening for job requests...
+Scheduling task using round_robin_algo
+========== SENT MAP TASK 2_M0 TO WORKER 1 ==========
+Worker  1 :  5 3
+Worker  2 :  5 2
+Worker  3 :  5 2
+Scheduling task using round_robin_algo
+========== SENT MAP TASK 2_M1 TO WORKER 2 ==========
+Worker  1 :  5 3
+Worker  2 :  5 3
+Worker  3 :  5 2
+Received update from worker
+========== WORKER 1 COMPLETED TASK 0_M0 ==========
+Updating task dependencies
+Worker  1 :  5 2
+Worker  2 :  5 3
+Worker  3 :  5 2
+Received update from worker
+========== WORKER 1 COMPLETED TASK 0_M3 ==========
+Updating task dependencies
+Worker  1 :  5 1
+Worker  2 :  5 3
+Worker  3 :  5 2
+Received update from worker
+========== WORKER 1 COMPLETED TASK 2_M0 ==========
+Updating task dependencies
+Worker  1 :  5 0
+Worker  2 :  5 3
+Worker  3 :  5 2
+Received update from worker
+========== WORKER 3 COMPLETED TASK 0_M2 ==========
+Updating task dependencies
+Worker  1 :  5 0
+Worker  2 :  5 3
+Worker  3 :  5 1
+Received update from worker
+========== WORKER 2 COMPLETED TASK 0_M1 ==========
+Updating task dependencies
+Worker  1 :  5 0
+Worker  2 :  5 2
+Worker  3 :  5 1
+Scheduling task using round_robin_algo
+========== SENT REDUCE TASK 0_R0 TO WORKER 3 ==========
+Worker  1 :  5 0
+Worker  2 :  5 2
+Worker  3 :  5 2
+Received update from worker
+========== WORKER 2 COMPLETED TASK 1_M0 ==========
+Updating task dependencies
+Worker  1 :  5 0
+Worker  2 :  5 1
+Worker  3 :  5 2
+Received update from worker
+========== WORKER 3 COMPLETED TASK 0_R0 ==========
+Updating task dependencies
+Worker  1 :  5 0
+Worker  2 :  5 1
+Worker  3 :  5 1
+Received update from worker
+========== WORKER 3 COMPLETED TASK 1_M1 ==========
+Updating task dependencies
+Worker  1 :  5 0
+Worker  2 :  5 1
+Worker  3 :  5 0
+Scheduling task using round_robin_algo
+========== SENT REDUCE TASK 1_R0 TO WORKER 1 ==========
+Worker  1 :  5 1
+Worker  2 :  5 1
+Worker  3 :  5 0
+Received update from worker
+========== WORKER 2 COMPLETED TASK 2_M1 ==========
+Updating task dependencies
+Worker  1 :  5 1
+Worker  2 :  5 0
+Worker  3 :  5 0
+Scheduling task using round_robin_algo
+========== SENT REDUCE TASK 2_R0 TO WORKER 2 ==========
+Worker  1 :  5 1
+Worker  2 :  5 1
+Worker  3 :  5 0
+Scheduling task using round_robin_algo
+========== SENT REDUCE TASK 2_R1 TO WORKER 3 ==========
+Worker  1 :  5 1
+Worker  2 :  5 1
+Worker  3 :  5 1
+Received update from worker
+========== WORKER 3 COMPLETED TASK 2_R1 ==========
+Updating task dependencies
+Worker  1 :  5 1
+Worker  2 :  5 1
+Worker  3 :  5 0
+Received update from worker
+========== WORKER 2 COMPLETED TASK 2_R0 ==========
+Updating task dependencies
+Worker  1 :  5 1
+Worker  2 :  5 0
+Worker  3 :  5 0
+Received update from worker
+========== WORKER 1 COMPLETED TASK 1_R0 ==========
+Updating task dependencies
+Worker  1 :  5 0
+Worker  2 :  5 0
+Worker  3 :  5 0
