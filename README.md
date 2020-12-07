@@ -6,7 +6,7 @@ A simple centralised scheduler for Map-Reduce jobs.
 
 Create a Python3 virtual environment.  
 ~~~ 
-pip3 install python3-venv  
+pip3 install python3-venv  OR  pip3 install virtualenv 
 python3 -m venv name-of-env  
 ~~~  
 Activate the virtual environment  
